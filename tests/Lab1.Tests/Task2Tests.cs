@@ -30,7 +30,7 @@ public class Task2Tests
                     .ContinueWith(_ => client.HandleOperationResult(guid, response), ct);
             });
         Task<ResponseModel> task = client.SendAsync(request, ct);
-        ResponseModel final = await task.ConfigureAwait(true);
+        ResponseModel final = await task;
 
         final.Should().NotBeNull();
         final.Data.Should().BeEquivalentTo(response);

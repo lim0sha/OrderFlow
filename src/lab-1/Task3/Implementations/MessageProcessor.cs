@@ -39,7 +39,6 @@ public class MessageProcessor : IMessageSender, IMessageProcessor
 
     public async ValueTask SendAsync(Message message, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(message);
         await _channel.Writer.WriteAsync(message, cancellationToken).ConfigureAwait(false);
     }
 
@@ -55,7 +54,7 @@ public class MessageProcessor : IMessageSender, IMessageProcessor
                 .Select(h => h.HandleAsync(chunk, cancellationToken).AsTask())
                 .ToList();
 
-            await Task.WhenAll(handlerTasks).ConfigureAwait(false);
+            await Task.WhenAll(handlerTasks);
         }
     }
 }

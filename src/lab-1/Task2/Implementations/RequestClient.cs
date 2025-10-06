@@ -25,7 +25,7 @@ public class RequestClient : IRequestClient, ILibraryOperationHandler
             cancellationToken.Register(() => tcs.SetCanceled(cancellationToken));
 
         _service.BeginOperation(id, request, cancellationToken);
-        return await tcs.Task.ConfigureAwait(false);
+        return await tcs.Task;
     }
 
     public void HandleOperationResult(Guid requestId, byte[] data)

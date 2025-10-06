@@ -36,13 +36,12 @@ public static class Program
             .Select(n => new Message($"#{n}", "text"));
 
         await Parallel.ForEachAsync(
-                messages,
-                cts.Token,
-                async (message, token) => await sender.SendAsync(message, token))
-            .ConfigureAwait(false);
+            messages,
+            cts.Token,
+            async (message, token) => await sender.SendAsync(message, token));
 
         processor.Complete();
         cts.Dispose();
-        await processingTask.ConfigureAwait(false);
+        await processingTask;
     }
 }

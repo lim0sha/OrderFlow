@@ -120,8 +120,9 @@ public class Task1Tests
         }
 
         IAsyncEnumerable<int> initAsync = ToAsync(init);
+        CancellationToken ct = CancellationToken.None;
         IAsyncEnumerable<int>[] collectionsAsync = collections.Select(ToAsync).ToArray();
-        List<int[]> result = await initAsync.DoZipAsync(collectionsAsync).ToListAsync();
+        List<int[]> result = await initAsync.DoZipAsync(ct, collectionsAsync).ToListAsync();
 
         result.Should().BeEquivalentTo(expected, options => options.WithStrictOrdering());
     }
@@ -168,8 +169,9 @@ public class Task1Tests
         }
 
         IAsyncEnumerable<int> initAsync = ToAsync(init);
+        CancellationToken ct = CancellationToken.None;
         IAsyncEnumerable<int>[] collectionsAsync = collections.Select(ToAsync).ToArray();
-        List<int[]> result = await initAsync.DoZipAsync(collectionsAsync).ToListAsync();
+        List<int[]> result = await initAsync.DoZipAsync(ct, collectionsAsync).ToListAsync();
 
         result.Should().BeEquivalentTo(expected, options => options.WithStrictOrdering());
     }
