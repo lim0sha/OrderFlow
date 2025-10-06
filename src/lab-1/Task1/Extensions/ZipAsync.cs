@@ -18,14 +18,12 @@ public static class ZipAsync
 
         try
         {
-            while ((await Task.WhenAll(enumerators.Select(e => e.MoveNextAsync().AsTask()))).All(i => i))
+            while (true)
             {
                 IEnumerable<Task<bool>> moveNextTasks = enumerators.Select(e => e.MoveNextAsync().AsTask());
                 bool[] results = await Task.WhenAll(moveNextTasks).ConfigureAwait(false);
-
                 if (!results.All(success => success))
                     yield break;
-
                 yield return enumerators.Select(e => e.Current).ToArray();
             }
         }
