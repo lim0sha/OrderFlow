@@ -4,14 +4,13 @@ using Task2.Models;
 
 namespace Task2.Implementations;
 
-public class RequestClient : IRequestClient, ILibraryOperationHandler, ILibraryOperationRefuser
+public class RequestClient : IRequestClient, ILibraryOperationHandler
 {
     private readonly ILibraryOperationService _service;
     private readonly ConcurrentDictionary<Guid, TaskCompletionSource<ResponseModel>> _dict = new();
 
     public RequestClient(ILibraryOperationService service)
     {
-        ArgumentNullException.ThrowIfNull(service);
         _service = service;
     }
 
@@ -20,22 +19,13 @@ public class RequestClient : IRequestClient, ILibraryOperationHandler, ILibraryO
         var id = Guid.NewGuid();
         var tcs = new TaskCompletionSource<ResponseModel>();
 
-        if (_dict.TryAdd(id, tcs))
-        {
-            CancellationTokenRegistration registry = cancellationToken.Register(() => RefuseOperation(id));
-            try
-            {
-                _service.BeginOperation(id, request, cancellationToken);
-                return await tcs.Task.ConfigureAwait(false);
-            }
-            finally
-            {
-                await registry.DisposeAsync();
-                _dict.TryRemove(id, out _);
-            }
-        }
+        _dict.TryAdd(id, tcs);
 
-        throw new InvalidOperationException($"Invalid request, guid {id} match found");
+        await using CancellationTokenRegistration register =
+            cancellationToken.Register(() => tcs.SetCanceled(cancellationToken));
+
+        _service.BeginOperation(id, request, cancellationToken);
+        return await tcs.Task.ConfigureAwait(false);
     }
 
     public void HandleOperationResult(Guid requestId, byte[] data)
@@ -56,10 +46,5 @@ public class RequestClient : IRequestClient, ILibraryOperationHandler, ILibraryO
         }
 
         tcs.SetException(exception);
-    }
-
-    public void RefuseOperation(Guid id)
-    {
-        _dict.GetValueOrDefault(id)?.TrySetCanceled();
     }
 }

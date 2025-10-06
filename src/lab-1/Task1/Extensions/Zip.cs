@@ -6,9 +6,6 @@ public static class Zip
         this IEnumerable<T> init,
         params IEnumerable<T>[] collections)
     {
-        ArgumentNullException.ThrowIfNull(init);
-        ArgumentNullException.ThrowIfNull(collections);
-
         var query = new List<IEnumerable<T>>(1 + collections.Length) { init };
         query.AddRange(collections);
 
@@ -18,18 +15,9 @@ public static class Zip
 
         try
         {
-            while (true)
+            while (enumerators.All(x => x.MoveNext()))
             {
-                var tuple = new T[enumerators.Count];
-                for (int i = 0; i < enumerators.Count; ++i)
-                {
-                    if (!enumerators[i].MoveNext())
-                        yield break;
-
-                    tuple[i] = enumerators[i].Current;
-                }
-
-                yield return tuple;
+                yield return enumerators.Select(x => x.Current).ToArray();
             }
         }
         finally

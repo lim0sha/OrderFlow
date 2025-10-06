@@ -1,3 +1,4 @@
+using Task3.Configs;
 using Task3.Entities;
 using Task3.Implementations;
 
@@ -13,7 +14,14 @@ public static class Program
         const int totalMessages = 1000;
 
         var messageHandler = new MessageHandler();
-        var messageProcessor = new MessageProcessor(channelsVolume, messageHandler, batchVolume, batchTimeout);
+        var config = new MessageProcessorConfig
+        {
+            ChannelCapacity = channelsVolume,
+            BatchVolume = batchVolume,
+            BatchTime = batchTimeout,
+        };
+
+        var messageProcessor = new MessageProcessor(config, new[] { messageHandler });
 
         MessageProcessor processor = messageProcessor;
         MessageProcessor sender = messageProcessor;

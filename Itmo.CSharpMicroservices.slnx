@@ -1,5 +1,10 @@
 ﻿<Solution>
-  <Folder Name="/common/" />
+  <Folder Name="/common/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/lab-1/">
     <Project Path="src\lab-1\Task1\Task1.csproj" Type="Classic C#" />

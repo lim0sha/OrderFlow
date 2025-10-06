@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Task3.Configs;
 using Task3.Entities;
 using Task3.Interfaces;
 
@@ -7,24 +8,28 @@ namespace Task3.Implementations;
 public class MessageProcessor : IMessageSender, IMessageProcessor
 {
     private readonly Channel<Message> _channel;
-    private readonly long _batchVolume;
+    private readonly int _batchVolume;
     private readonly TimeSpan _batchTime;
-    private readonly IMessageHandler _handler;
+    private readonly List<IMessageHandler> _handlers;
 
-    public MessageProcessor(long channelsVolume, IMessageHandler handler, long batchVolume, TimeSpan? batchTime = null)
+    public MessageProcessor(
+        MessageProcessorConfig config,
+        IEnumerable<IMessageHandler> handlers)
     {
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _batchVolume = batchVolume;
-        _batchTime = batchTime ?? TimeSpan.FromMilliseconds(100);
-
-        var boundedOptions = new BoundedChannelOptions((int)channelsVolume)
+        var channelOptions = new BoundedChannelOptions(config.ChannelCapacity)
         {
-            FullMode = BoundedChannelFullMode.Wait,
-            SingleReader = true,
-            SingleWriter = false,
+            FullMode = config.FullMode,
+            SingleReader = config.SingleReader,
+            SingleWriter = config.SingleWriter,
         };
 
-        _channel = Channel.CreateBounded<Message>(boundedOptions);
+        _channel = Channel.CreateBounded<Message>(channelOptions);
+        _batchVolume = config.BatchVolume;
+        _batchTime = config.BatchTime;
+        _handlers = handlers.ToList();
+
+        if (_handlers.Count == 0)
+            throw new ArgumentException("Error in handlers", nameof(handlers));
     }
 
     public void Complete()
@@ -35,16 +40,22 @@ public class MessageProcessor : IMessageSender, IMessageProcessor
     public async ValueTask SendAsync(Message message, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(message);
-        await _channel.Writer.WriteAsync(message, cancellationToken);
+        await _channel.Writer.WriteAsync(message, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        IAsyncEnumerable<Message> messageList = _channel.Reader.ReadAllAsync(cancellationToken);
+        IAsyncEnumerable<Message> messageStream = _channel.Reader.ReadAllAsync(cancellationToken);
 
-        await foreach (IReadOnlyList<Message> chunk in messageList.ChunkAsync((int)_batchVolume, _batchTime).WithCancellation(cancellationToken))
+        await foreach (IReadOnlyList<Message>? chunk in messageStream
+                           .ChunkAsync(_batchVolume, _batchTime)
+                           .WithCancellation(cancellationToken))
         {
-            await _handler.HandleAsync(chunk, cancellationToken).ConfigureAwait(false);
+            var handlerTasks = _handlers
+                .Select(h => h.HandleAsync(chunk, cancellationToken).AsTask())
+                .ToList();
+
+            await Task.WhenAll(handlerTasks).ConfigureAwait(false);
         }
     }
 }

@@ -20,23 +20,20 @@ public static class ZipAsync
         {
             while (true)
             {
-                var asyncTuple = new T[enumerators.Count];
-                for (int i = 0; i < enumerators.Count; ++i)
-                {
-                    if (!await enumerators[i].MoveNextAsync())
-                        yield break;
+                IEnumerable<Task<bool>> hasNextTasks = enumerators.Select(e => e.MoveNextAsync().AsTask());
+                bool[] hasNextResults = await Task.WhenAll(hasNextTasks);
 
-                    asyncTuple[i] = enumerators[i].Current;
-                }
+                if (!hasNextResults.All(success => success))
+                    yield break;
 
-                yield return asyncTuple;
+                yield return enumerators.Select(e => e.Current).ToArray();
             }
         }
         finally
         {
             foreach (IAsyncEnumerator<T> e in enumerators)
             {
-                await e.DisposeAsync();
+                await e.DisposeAsync().ConfigureAwait(false);
             }
         }
     }
