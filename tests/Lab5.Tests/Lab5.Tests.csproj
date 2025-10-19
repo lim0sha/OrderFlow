@@ -6,7 +6,19 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="Refit" />
+        <PackageReference Include="Refit.HttpClientFactory" />
+        <PackageReference Include="Spectre.Console" />
+        <PackageReference Include="Spectre.Console.ImageSharp" />
         <PackageReference Include="xunit"/>
         <PackageReference Include="xunit.runner.visualstudio"/>
     </ItemGroup>

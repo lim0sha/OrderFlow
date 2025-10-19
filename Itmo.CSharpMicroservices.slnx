@@ -11,7 +11,19 @@
     <Project Path="src\lab-1\Task2\Task2.csproj" Type="Classic C#" />
     <Project Path="src\lab-1\Task3\Task3.csproj" Type="Classic C#" />
   </Folder>
-  <Folder Name="/src/lab-2/" />
+  <Folder Name="/src/lab-2/">
+    <File Path="src\lab-2\docker-compose.yaml" />
+  </Folder>
+  <Folder Name="/src/lab-2/Task1/">
+    <Project Path="src\lab-2\Task1\Task1\Task1.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/lab-2/Task2/">
+    <Project Path="src\lab-2\Task2\Task2\Task2.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/lab-2/Task3/">
+    <Project Path="src\lab-2\Task3\Task3\Task3.csproj" Type="Classic C#" />
+    <File Path="ToBase64Source.txt" />
+  </Folder>
   <Folder Name="/src/lab-3/" />
   <Folder Name="/src/lab-4/" />
   <Folder Name="/src/lab-5/" />
