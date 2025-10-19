@@ -34,7 +34,7 @@ public class DefaultHttpClientClient : IWebClient
         if (!string.IsNullOrEmpty(tk))
             queryParameters["tk"] = tk;
 
-        for (; ;)
+        do
         {
             Uri uri = BuildUriWithQuery(queryParameters);
             HttpResponseMessage response = await SendHttpRequestAsync(uri, ct);
@@ -45,11 +45,10 @@ public class DefaultHttpClientClient : IWebClient
                 yield return config;
 
             tk = page.PageToken;
-            if (tk == null)
-                break;
-
-            queryParameters["tk"] = tk;
+            if (tk != null)
+                queryParameters["tk"] = tk;
         }
+        while (tk != null);
     }
 
     private Uri BuildUriWithQuery(Dictionary<string, string> queryParameters)
