@@ -7,62 +7,55 @@ namespace Lab2.Tests;
 public class Task2Tests
 {
     [Fact]
-    public async Task Scenario1()
+    public void Scenario1()
     {
         var provider = new ConfigStorage();
         var input = new List<Config> { new() { Key = "A", Value = "1" } };
         bool reloaded = false;
         provider.ReloadTokenAccessor.RegisterChangeCallback(_ => reloaded = true, null);
-        await provider.Refresh(ToAsyncEnumerable(input), CancellationToken.None);
+        provider.Refresh(input.ToArray());
         Assert.True(provider.TryGet("A", out string? value) && value == "1");
         Assert.True(reloaded);
     }
 
     [Fact]
-    public async Task Scenario2()
+    public void Scenario2()
     {
         var provider = new ConfigStorage();
         var initial = new List<Config> { new() { Key = "A", Value = "1" } };
-        await provider.Refresh(ToAsyncEnumerable(initial), CancellationToken.None);
+        provider.Refresh(initial);
         bool reloaded = false;
         provider.ReloadTokenAccessor.RegisterChangeCallback(_ => reloaded = true, null);
-        await provider.Refresh(ToAsyncEnumerable(initial), CancellationToken.None);
+        provider.Refresh(initial);
         Assert.False(reloaded);
         Assert.True(provider.TryGet("A", out string? value) && value == "1");
     }
 
     [Fact]
-    public async Task Scenario3()
+    public void Scenario3()
     {
         var provider = new ConfigStorage();
         var initial = new List<Config> { new() { Key = "A", Value = "1" } };
-        await provider.Refresh(ToAsyncEnumerable(initial), CancellationToken.None);
+        provider.Refresh(initial);
         bool reloaded = false;
         provider.ReloadTokenAccessor.RegisterChangeCallback(_ => reloaded = true, null);
         var updated = new List<Config> { new() { Key = "A", Value = "2" } };
-        await provider.Refresh(ToAsyncEnumerable(updated), CancellationToken.None);
+        provider.Refresh(updated);
         Assert.True(reloaded);
         Assert.True(provider.TryGet("A", out string? value) && value == "2");
     }
 
     [Fact]
-    public async Task Scenario4()
+    public void Scenario4()
     {
         var provider = new ConfigStorage();
         var initial = new List<Config> { new() { Key = "A", Value = "1" } };
-        await provider.Refresh(ToAsyncEnumerable(initial), CancellationToken.None);
+        provider.Refresh(initial);
         bool reloaded = false;
         provider.ReloadTokenAccessor.RegisterChangeCallback(_ => reloaded = true, null);
         var empty = new List<Config>();
-        await provider.Refresh(ToAsyncEnumerable(empty), CancellationToken.None);
+        provider.Refresh(empty);
         Assert.True(reloaded);
         Assert.Empty(provider.GetChildKeys([], string.Empty));
-    }
-
-    private static async IAsyncEnumerable<Config> ToAsyncEnumerable(IEnumerable<Config> configs)
-    {
-        foreach (Config config in configs)
-            yield return config;
-        await Task.CompletedTask;
     }
 }

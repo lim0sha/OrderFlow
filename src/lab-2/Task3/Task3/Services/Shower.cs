@@ -3,10 +3,14 @@ using Task3.Services.Interfaces;
 
 namespace Task3.Services;
 
-public sealed class Shower : IShower, IDisposable
+public sealed class Shower : IShower
 {
-    private readonly HttpClient _http = new();
-    private bool _disposed;
+    private readonly IHttpClientFactory _factory;
+
+    public Shower(IHttpClientFactory factory)
+    {
+        _factory = factory;
+    }
 
     public void ShowFiglet(string text)
     {
@@ -16,8 +20,9 @@ public sealed class Shower : IShower, IDisposable
 
     public void ShowImageFromUrl(string url, int width)
     {
+        HttpClient client = _factory.CreateClient();
         string temp = Path.GetTempFileName();
-        File.WriteAllBytes(temp, _http.GetByteArrayAsync(url).Result);
+        File.WriteAllBytes(temp, client.GetByteArrayAsync(url).Result);
         CanvasImage img = new CanvasImage(temp).MaxWidth(width);
         AnsiConsole.Write(img);
         File.Delete(temp);
@@ -44,17 +49,5 @@ public sealed class Shower : IShower, IDisposable
             MaxWidth = width,
         };
         AnsiConsole.Write(image);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _http.Dispose();
-        _disposed = true;
-        GC.SuppressFinalize(this);
     }
 }

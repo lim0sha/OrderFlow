@@ -7,11 +7,11 @@ namespace Task2.Sources.Providers;
 
 public class ConfigStorage : ConfigurationProvider, IConfigProvider
 {
-    public async Task Refresh(IAsyncEnumerable<Config> collection, CancellationToken token)
+    public void Refresh(IEnumerable<Config> collection)
     {
         Dictionary<string, string> newData = new();
 
-        await foreach (Config item in collection.WithCancellation(token))
+        foreach (Config item in collection)
         {
             newData[item.Key] = item.Value;
         }
@@ -28,7 +28,9 @@ public class ConfigStorage : ConfigurationProvider, IConfigProvider
 
         foreach (KeyValuePair<string, string> pair in newData)
         {
-            if (Data.TryGetValue(pair.Key, out string? current) && current == pair.Value) continue;
+            if (Data.TryGetValue(pair.Key, out string? current) && current == pair.Value)
+                continue;
+
             Data[pair.Key] = pair.Value;
             updated = true;
         }

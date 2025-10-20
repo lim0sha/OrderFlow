@@ -11,8 +11,13 @@ public static class OptionsExtension
         services
             .AddOptions<ConnectionOptions>()
             .Bind(config.GetSection("ServiceConnection:Settings"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            .Validate(options =>
+            {
+                if (string.IsNullOrWhiteSpace(options.ConnectionHost))
+                    return false;
+
+                return options.ConnectionPort is > 0 and <= 65535;
+            }).ValidateOnStart();
 
         return services;
     }

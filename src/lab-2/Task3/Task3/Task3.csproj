@@ -12,6 +12,8 @@
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
       <PackageReference Include="Microsoft.Extensions.Hosting" />
       <PackageReference Include="Microsoft.Extensions.Options" />
+      <PackageReference Include="Refit" />
+      <PackageReference Include="Refit.HttpClientFactory" />
       <PackageReference Include="Spectre.Console" />
       <PackageReference Include="Spectre.Console.ImageSharp" />
     </ItemGroup>

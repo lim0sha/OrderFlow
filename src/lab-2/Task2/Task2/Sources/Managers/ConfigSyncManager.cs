@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using System.Runtime.CompilerServices;
 using Task1.Clients.Interfaces;
 using Task1.Models.Entities;
 using Task2.Sources.Managers.Interfaces;
@@ -23,7 +22,8 @@ public class ConfigSyncManager : IConfigManager
 
     public async Task Update(int pageSize, string? pageToken, CancellationToken token)
     {
-        await _storage.Refresh(RetrieveAsync(pageSize, pageToken, token), token);
+        List<Config> configs = await RetrieveAllAsync(pageSize, pageToken, token);
+        _storage.Refresh(configs);
     }
 
     public async Task UpdateOnInterval(int pageSize, string? pageToken, CancellationToken token)
@@ -34,8 +34,8 @@ public class ConfigSyncManager : IConfigManager
         {
             while (await loopTimer.WaitForNextTickAsync(token))
             {
-                IAsyncEnumerable<Config> configs = _client.FetchConfigs(pageSize, pageToken, token);
-                await _storage.Refresh(configs, token);
+                List<Config> configs = await RetrieveAllAsync(pageSize, pageToken, token);
+                _storage.Refresh(configs);
             }
         }
         catch (OperationCanceledException exception)
@@ -44,11 +44,14 @@ public class ConfigSyncManager : IConfigManager
         }
     }
 
-    public async IAsyncEnumerable<Config> RetrieveAsync(int pageSize, string? pageToken, [EnumeratorCancellation] CancellationToken token)
+    private async Task<List<Config>> RetrieveAllAsync(int pageSize, string? pageToken, CancellationToken token)
     {
+        List<Config> result = [];
         await foreach (Config cfg in _client.FetchConfigs(pageSize, pageToken, token))
         {
-            yield return cfg;
+            result.Add(cfg);
         }
+
+        return result;
     }
 }

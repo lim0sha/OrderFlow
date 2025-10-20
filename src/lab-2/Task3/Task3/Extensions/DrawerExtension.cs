@@ -8,12 +8,14 @@ namespace Task3.Extensions;
 
 public static class DrawerExtension
 {
-    public static IServiceCollection IncludeConfig(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<RendererBlueprint>(configuration.GetSection("Renderer"));
+        services.AddHttpClient();
         services.AddSingleton<IShower, Shower>();
-        services.AddHostedService<Displayer>();
         services.AddSingleton<IDisplayer, Displayer>();
+        services.AddHostedService(provider => (Displayer)provider.GetRequiredService<IDisplayer>());
+
         return services;
     }
 }

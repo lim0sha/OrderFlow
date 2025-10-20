@@ -10,7 +10,6 @@ public class DefaultHttpClientClient : IWebClient
 {
     private readonly IHttpClientFactory _factory;
     private readonly HttpClient _httpClient;
-    private readonly Uri _baseUri;
     private readonly IQueryStringBuilder _queryBuilder;
 
     public DefaultHttpClientClient(
@@ -20,8 +19,8 @@ public class DefaultHttpClientClient : IWebClient
     {
         _factory = httpClientFactory;
         _httpClient = _factory.CreateClient();
+        _httpClient.BaseAddress = new Uri($"http://{connectionOptions.Value.ConnectionHost}:{connectionOptions.Value.ConnectionPort}/configurations");
         _queryBuilder = queryBuilder;
-        _baseUri = new Uri($"http://{connectionOptions.Value.ConnectionHost}:{connectionOptions.Value.ConnectionPort}/configurations");
     }
 
     public async IAsyncEnumerable<Config> FetchConfigs(int pages, string? tk, [EnumeratorCancellation] CancellationToken ct)
@@ -37,8 +36,7 @@ public class DefaultHttpClientClient : IWebClient
         do
         {
             Uri uri = BuildUriWithQuery(queryParameters);
-            HttpResponseMessage response = await SendHttpRequestAsync(uri, ct);
-
+            using HttpResponseMessage response = await SendHttpRequestAsync(uri, ct);
             ConfigPage page = await response.Content.ReadFromJsonAsync<ConfigPage>(ct);
 
             foreach (Config config in page.Configs)
@@ -54,7 +52,7 @@ public class DefaultHttpClientClient : IWebClient
     private Uri BuildUriWithQuery(Dictionary<string, string> queryParameters)
     {
         string queryString = _queryBuilder.Build(queryParameters);
-        return new Uri($"{_baseUri}?{queryString}");
+        return new Uri($"?{queryString}", UriKind.Relative);
     }
 
     private async Task<HttpResponseMessage> SendHttpRequestAsync(Uri uri, CancellationToken ct)
