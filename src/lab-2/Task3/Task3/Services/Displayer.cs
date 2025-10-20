@@ -7,7 +7,7 @@ using Task3.Services.Interfaces;
 
 namespace Task3.Services;
 
-public class Displayer : BackgroundService, IDisplayer
+public class Displayer : BackgroundService
 {
     private readonly IShower _shower;
     private readonly IOptionsMonitor<RendererBlueprint> _monitor;

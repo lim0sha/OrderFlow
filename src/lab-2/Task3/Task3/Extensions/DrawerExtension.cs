@@ -13,9 +13,7 @@ public static class DrawerExtension
         services.Configure<RendererBlueprint>(configuration.GetSection("Renderer"));
         services.AddHttpClient();
         services.AddSingleton<IShower, Shower>();
-        services.AddSingleton<IDisplayer, Displayer>();
-        services.AddHostedService(provider => (Displayer)provider.GetRequiredService<IDisplayer>());
-
+        services.AddHostedService<Displayer>();
         return services;
     }
 }
