@@ -1,0 +1,1 @@
+Использовал это: https://base64toimage.github.io/image-to-base64
