@@ -25,6 +25,15 @@
     <File Path="ToBase64Source.txt" />
   </Folder>
   <Folder Name="/src/lab-3/" />
+  <Folder Name="/src/lab-3/DataAccess/">
+    <Project Path="src\lab-3\DataAccess\DataAccess\DataAccess.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/lab-3/Gateway/">
+    <Project Path="src\lab-3\Gateway\Gateway\Gateway.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/lab-3/Presentation/">
+    <Project Path="src\lab-3\Presentation\Presentation\Presentation.csproj" Type="Classic C#" />
+  </Folder>
   <Folder Name="/src/lab-4/" />
   <Folder Name="/src/lab-5/" />
   <Folder Name="/tests/">
