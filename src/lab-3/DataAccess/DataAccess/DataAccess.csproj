@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Migrations/Scripts/V1__Drop.sql"/>
+        <EmbeddedResource Include="Migrations/Scripts/V1__Init.sql"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Product_Create.sql"/>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Product_GetFiltered.sql"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Order_Create.sql"/>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Order_Update.sql"/>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Order_GetById.sql"/>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Order_GetFiltered.sql"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderHistory_Create.sql"/>
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderHistory_GetFiltered.sql"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_Create.sql" />
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_Update.sql" />
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_GetById.sql" />
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_GetFiltered.sql" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentMigrator"/>
+        <PackageReference Include="FluentMigrator.Runner"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Npgsql"/>
+    </ItemGroup>
+
+</Project>
