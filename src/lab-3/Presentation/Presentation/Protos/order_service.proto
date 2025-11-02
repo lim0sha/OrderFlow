@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+option csharp_namespace = "Presentation.Protos";
+
+enum OrderState {
+  CREATED = 0;
+  PROCESSING = 1;
+  COMPLETED = 2;
+  CANCELLED = 3;
+}
+
+enum OrderHistoryItemKind {
+  HISTORY_CREATED = 0;
+  ITEM_ADDED = 1;
+  ITEM_REMOVED = 2;
+  STATE_CHANGED = 3;
+}
+
+message Order {
+  int64 id = 1;
+  OrderState state = 2;
+  string created_by = 3;
+}
+
+message OrderItem {
+  int64 id = 1;
+  int64 order_id = 2;
+  int64 product_id = 3;
+  int32 quantity = 4;
+  bool deleted = 5;
+}
+
+message CreateOrderRequest {
+  string created_by = 1;
+}
+
+message CreateOrderSuccess {}
+
+message OrderIsNotCreated {
+  string message = 1;
+}
+
+message OrderNotFound {
+  string message = 1;
+}
+
+message OrderAlreadyProcessing {
+  string message = 1;
+}
+
+message OrderAlreadyCompleted {
+  string message = 1;
+}
+
+message OrderAlreadyCancelled {
+  string message = 1;
+}
+
+message OrderCannotBeCancelled {
+  string message = 1;
+}
+
+message InvalidOperation {
+  string message = 1;
+}
+
+message OrderItemNotFound {
+  string message = 1;
+}
+
+message CreateOrderResponse {
+  oneof result {
+    CreateOrderSuccess success = 1;
+    OrderIsNotCreated error = 2;
+    OrderNotFound not_found = 3;
+  }
+}
+
+message AddItemRequest {
+  int64 order_id = 1;
+  int64 product_id = 2;
+  int32 quantity = 3;
+  bool deleted = 4;
+}
+
+message AddItemSuccess {
+  int64 order_item_id = 1;
+}
+
+message AddItemResponse {
+  oneof result {
+    AddItemSuccess success = 1;
+    OrderIsNotCreated order_is_not_created = 2;
+    OrderNotFound order_not_found = 3;
+  }
+}
+
+message RemoveItemRequest {
+  int64 order_id = 1;
+  int64 order_item_id = 2;
+}
+
+message RemoveItemSuccess {}
+
+message RemoveItemResponse {
+  oneof result {
+    RemoveItemSuccess success = 1;
+    OrderIsNotCreated order_is_not_created = 2;
+    OrderNotFound order_not_found = 3;
+    OrderItemNotFound order_item_not_found = 4;
+  }
+}
+
+message TransferToWorkRequest {
+  int64 order_id = 1;
+}
+
+message TransferToWorkSuccess {}
+
+message TransferToWorkResponse {
+  oneof result {
+    TransferToWorkSuccess success = 1;
+    OrderIsNotCreated order_is_not_created = 2;
+    OrderNotFound order_not_found = 3;
+    OrderAlreadyProcessing already_processing = 4;
+  }
+}
+
+message CompleteOrderRequest {
+  int64 order_id = 1;
+}
+
+message CompleteOrderSuccess {}
+
+message CompleteOrderResponse {
+  oneof result {
+    CompleteOrderSuccess success = 1;
+    OrderNotFound order_not_found = 2;
+    OrderAlreadyCompleted already_completed = 3;
+  }
+}
+
+message CancelOrderRequest {
+  int64 order_id = 1;
+}
+
+message CancelOrderSuccess {}
+
+message CancelOrderResponse {
+  oneof result {
+    CancelOrderSuccess success = 1;
+    OrderNotFound order_not_found = 2;
+    OrderAlreadyCompleted already_completed = 3;
+    OrderAlreadyCancelled already_cancelled = 4;
+  }
+}
+
+message OrderHistory {
+  int64 id = 1;
+  int64 order_id = 2;
+  string created_at = 3;
+  OrderHistoryItemKind kind = 4;
+  string payload = 5;
+}
+
+message OrderHistoryRequestFiltered {
+  int64 order_id = 1;
+  OrderHistoryItemKind kind = 2;
+}
+
+message GetHistoryRequest {
+  int32 cursor = 1;
+  int32 volume = 2;
+  OrderHistoryRequestFiltered filter = 3;
+}
+
+message GetHistoryResponse {
+  repeated OrderHistory history = 1;
+}
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc AddItem(AddItemRequest) returns (AddItemResponse);
+  rpc RemoveItem(RemoveItemRequest) returns (RemoveItemResponse);
+  rpc TransferToWork(TransferToWorkRequest) returns (TransferToWorkResponse);
+  rpc CompleteOrder(CompleteOrderRequest) returns (CompleteOrderResponse);
+  rpc Cancel(CancelOrderRequest) returns (CancelOrderResponse);
+  rpc GetHistoryByFilter(GetHistoryRequest) returns (GetHistoryResponse);
+}
