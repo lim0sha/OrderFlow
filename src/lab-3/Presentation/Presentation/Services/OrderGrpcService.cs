@@ -136,7 +136,7 @@ public class OrderGrpcService : OrderService.OrderServiceBase
 
         await foreach (OrderHistory h in history)
         {
-            grpcResponse.History.Add(new Presentation.Protos.OrderHistory
+            grpcResponse.History.Add(new Protos.OrderHistory()
             {
                 Id = h.Id,
                 OrderId = h.OrderId,

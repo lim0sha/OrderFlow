@@ -11,22 +11,15 @@ public static class MigrationExtensions
 {
     public static IServiceCollection AddMigrationsFromOptions(this IServiceCollection services)
     {
-        services.AddSingleton<IMigrationRunner>(sp =>
-        {
-            DbConnectionConfig config = sp.GetRequiredService<IOptions<DbConnectionConfig>>().Value;
-            string connectionString = DbConnectionStringBuilder.Build(config);
-
-            IMigrationRunner runner = new ServiceCollection()
-                .AddFluentMigratorCore()
-                .ConfigureRunner(rb => rb
-                    .AddPostgres()
-                    .WithGlobalConnectionString(connectionString)
-                    .WithMigrationsIn(typeof(InitialMigration).Assembly))
-                .BuildServiceProvider()
-                .GetService<IMigrationRunner>() ?? throw new InvalidOperationException(
-                "Error in IMigrationRunner.");
-            return runner;
-        });
+        services.AddFluentMigratorCore()
+            .ConfigureRunner(rb => rb
+                .AddPostgres()
+                .WithGlobalConnectionString(sp =>
+                {
+                    DbConnectionConfig config = sp.GetRequiredService<IOptions<DbConnectionConfig>>().Value;
+                    return DbConnectionStringBuilder.Build(config);
+                })
+                .WithMigrationsIn(typeof(InitialMigration).Assembly));
 
         return services;
     }
