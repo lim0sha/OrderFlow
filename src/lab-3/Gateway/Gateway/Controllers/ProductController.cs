@@ -1,8 +1,8 @@
 using Gateway.Models.DTO.Products;
 using Gateway.Models.Responses.Products.Create;
+using Gateway.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Presentation.Protos;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Gateway.Controllers;
@@ -11,11 +11,11 @@ namespace Gateway.Controllers;
 [Route("api/[controller]")]
 public class ProductController : ControllerBase
 {
-    private readonly ProductService.ProductServiceClient _productClient;
+    private readonly IProductGatewayService _productService;
 
-    public ProductController(ProductService.ProductServiceClient productClient)
+    public ProductController(IProductGatewayService productService)
     {
-        _productClient = productClient;
+        _productService = productService;
     }
 
     [HttpPost("create")]
@@ -26,32 +26,16 @@ public class ProductController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Save failed", typeof(SaveFailedResponse))]
     public async Task<ActionResult<CreateProductResponseBase>> CreateProduct([FromBody] CreateProductRequestDto request)
     {
-        CreateProductResponse response = await _productClient.CreateProductAsync(new CreateProductRequest
+        CreateProductResponseBase response = await _productService.CreateProductAsync(request);
+
+        return response switch
         {
-            ProductName = request.ProductName,
-            ProductPrice = (double)request.ProductPrice,
-        });
-
-        return response.ResultCase switch
-        {
-            CreateProductResponse.ResultOneofCase.Success =>
-                Ok(new CreateProductSuccessResponse(response.Success.ProductId)),
-
-            CreateProductResponse.ResultOneofCase.ValidationError =>
-                BadRequest(new ValidationErrorResponse(response.ValidationError.Message)),
-
-            CreateProductResponse.ResultOneofCase.NameExists =>
-                Conflict(new ProductNameAlreadyExistsResponse(response.NameExists.Message)),
-
-            CreateProductResponse.ResultOneofCase.InvalidPrice =>
-                BadRequest(new InvalidPriceResponse(response.InvalidPrice.Message)),
-
-            CreateProductResponse.ResultOneofCase.SaveFailed =>
-                StatusCode(StatusCodes.Status500InternalServerError, new SaveFailedResponse(response.SaveFailed.Message)),
-
-            CreateProductResponse.ResultOneofCase.None =>
-                NotFound(new CreateProductNoneResponse()),
-
+            CreateProductSuccessResponse => Ok(response),
+            ValidationErrorResponse => BadRequest(response),
+            ProductNameAlreadyExistsResponse => Conflict(response),
+            InvalidPriceResponse => BadRequest(response),
+            SaveFailedResponse => StatusCode(StatusCodes.Status500InternalServerError, response),
+            CreateProductNoneResponse => NotFound(response),
             _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
