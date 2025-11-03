@@ -27,8 +27,8 @@ public class ProductGrpcService : ProductService.ProductServiceBase
                 Success = new CreateProductSuccess(),
             }
             : new CreateProductResponse
-        {
-            ValidationError = new ValidationError { Message = "Failed to create product" },
-        };
+            {
+                ValidationError = new ValidationError { Message = "Failed to create product" },
+            };
     }
 }
