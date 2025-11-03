@@ -1,4 +1,3 @@
-using DataAccess.Models.Entities.Common.ResultTypes;
 using DataAccess.Models.Entities.Orders;
 using DataAccess.Models.Enums;
 using DataAccess.Models.Requests;
@@ -28,12 +27,9 @@ public class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<OrderOperationResult> Create(Order o, CancellationToken ct)
+    public async Task<bool> Create(Order o, CancellationToken ct)
     {
-        var transaction = new TransactionScope(
-            TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
-            TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transaction = InitBaseTransaction();
 
         try
         {
@@ -46,34 +42,27 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
-            return new OrderOperationResult.Success(orderId);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create order");
-            return new OrderOperationResult.InvalidOperation("Failed to create order");
-        }
-        finally
-        {
-            transaction.Dispose();
+            return false;
         }
     }
 
-    public async Task<OrderOperationResult> AddItem(OrderItem oi, CancellationToken ct)
+    public async Task<bool> AddItem(OrderItem oi, CancellationToken ct)
     {
-        var transaction = new TransactionScope(
-            TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
-            TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transaction = InitBaseTransaction();
 
         try
         {
             Order order = await _orderRepository.GetById(oi.OrderId, ct);
 
             if (order.OrderState != OrderState.Created)
-                return new OrderOperationResult.OrderIsNotCreated();
+                return false;
 
-            long orderItemId = await _orderItemRepository.Create(oi, ct);
+            await _orderItemRepository.Create(oi, ct);
             var history = new OrderHistory(
                 Id: 0,
                 OrderId: oi.OrderId,
@@ -82,32 +71,25 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
-            return new OrderOperationResult.Success(orderItemId);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add item to order {OrderId}", oi.OrderId);
-            return new OrderOperationResult.InvalidOperation("Failed to add item to order");
-        }
-        finally
-        {
-            transaction.Dispose();
+            return false;
         }
     }
 
-    public async Task<OrderOperationResult> RemoveItem(long oId, long oiId, CancellationToken ct)
+    public async Task<bool> RemoveItem(long oId, long oiId, CancellationToken ct)
     {
-        var transaction = new TransactionScope(
-            TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
-            TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transaction = InitBaseTransaction();
 
         try
         {
             Order order = await _orderRepository.GetById(oId, ct);
 
             if (order.OrderState != OrderState.Created)
-                return new OrderOperationResult.OrderIsNotCreated();
+                return false;
 
             OrderItem item = await _orderItemRepository.GetById(oiId, ct);
 
@@ -121,32 +103,25 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
-            return new OrderOperationResult.Success();
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to remove item {OrderItemId} from order {OrderId}", oiId, oId);
-            return new OrderOperationResult.InvalidOperation("Failed to remove item from order");
-        }
-        finally
-        {
-            transaction.Dispose();
+            return false;
         }
     }
 
-    public async Task<OrderOperationResult> TransferToWork(long id, CancellationToken ct)
+    public async Task<bool> TransferToWork(long id, CancellationToken ct)
     {
-        var transaction = new TransactionScope(
-            TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
-            TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transaction = InitBaseTransaction();
 
         try
         {
             Order order = await _orderRepository.GetById(id, ct);
 
             if (order.OrderState != OrderState.Created)
-                return new OrderOperationResult.OrderAlreadyProcessing();
+                return false;
 
             Order updatedOrder = order with { OrderState = OrderState.Processing };
             await _orderRepository.Update(updatedOrder, ct);
@@ -158,32 +133,25 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
-            return new OrderOperationResult.Success();
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to transfer order {OrderId} to work", id);
-            return new OrderOperationResult.InvalidOperation("Failed to transfer order to work");
-        }
-        finally
-        {
-            transaction.Dispose();
+            return false;
         }
     }
 
-    public async Task<OrderOperationResult> CompleteOrder(long id, CancellationToken ct)
+    public async Task<bool> CompleteOrder(long id, CancellationToken ct)
     {
-        var transaction = new TransactionScope(
-            TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
-            TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transaction = InitBaseTransaction();
 
         try
         {
             Order order = await _orderRepository.GetById(id, ct);
 
             if (order.OrderState != OrderState.Processing)
-                return new OrderOperationResult.OrderAlreadyCompleted();
+                return false;
 
             Order updatedOrder = order with { OrderState = OrderState.Completed };
             await _orderRepository.Update(updatedOrder, ct);
@@ -195,25 +163,18 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
-            return new OrderOperationResult.Success();
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to complete order {OrderId}", id);
-            return new OrderOperationResult.InvalidOperation("Failed to complete order");
-        }
-        finally
-        {
-            transaction.Dispose();
+            return false;
         }
     }
 
-    public async Task<OrderOperationResult> Cancel(long id, CancellationToken ct)
+    public async Task<bool> Cancel(long id, CancellationToken ct)
     {
-        var transaction = new TransactionScope(
-            TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
-            TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transaction = InitBaseTransaction();
 
         try
         {
@@ -222,9 +183,8 @@ public class OrderService : IOrderService
             switch (order.OrderState)
             {
                 case OrderState.Completed:
-                    return new OrderOperationResult.OrderAlreadyCompleted();
                 case OrderState.Cancelled:
-                    return new OrderOperationResult.OrderAlreadyCancelled();
+                    return false;
             }
 
             Order updatedOrder = order with { OrderState = OrderState.Cancelled };
@@ -237,16 +197,12 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
-            return new OrderOperationResult.Success();
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to cancel order {OrderId}", id);
-            return new OrderOperationResult.InvalidOperation("Failed to cancel order");
-        }
-        finally
-        {
-            transaction.Dispose();
+            return false;
         }
     }
 
@@ -257,5 +213,13 @@ public class OrderService : IOrderService
         CancellationToken ct)
     {
         return _orderHistoryRepository.GetFiltered(position, volume, request, ct);
+    }
+
+    private static TransactionScope InitBaseTransaction()
+    {
+        return new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled);
     }
 }

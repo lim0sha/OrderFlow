@@ -1,8 +1,11 @@
 using Gateway.Extensions;
 using Gateway.Middlewares;
+using Gateway.Services.Implementations;
+using Gateway.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Gateway.Application;
 
@@ -14,6 +17,7 @@ internal abstract class Program
         builder.WebHost.UseUrls("http://localhost:5001");
         builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         builder.Services.AddGatewayServices(builder.Configuration);
+        builder.Services.AddSingleton<IOrderGatewayService, OrderGatewayService>();
 
         WebApplication app = builder.Build();
 

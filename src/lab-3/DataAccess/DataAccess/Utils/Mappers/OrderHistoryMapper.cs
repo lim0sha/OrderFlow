@@ -1,8 +1,8 @@
 using DataAccess.Models.Entities.Carry;
 using DataAccess.Models.Entities.Orders;
+using DataAccess.Utils.DaoReaders;
 using DataAccess.Utils.Mappers.Interfaces;
 using Npgsql;
-using System.Data;
 using System.Text.Json;
 
 namespace DataAccess.Utils.Mappers;
@@ -11,14 +11,19 @@ public class OrderHistoryMapper : IOrderHistoryMapper
 {
     public OrderHistory MapOrderHistory(NpgsqlDataReader reader, JsonSerializerOptions jsonOptions)
     {
-        string payloadJson = reader.GetString("order_history_item_payload");
-        CarryBase? payload = JsonSerializer.Deserialize<CarryBase?>(payloadJson, jsonOptions);
+        Models.DAO.OrderHistoryDao dao = OrderHistoryDaoReader.Read(reader);
+
+        CarryBase? payload = null;
+        if (dao.OrderHistoryItemPayload is not null)
+        {
+            payload = JsonSerializer.Deserialize<CarryBase>(dao.OrderHistoryItemPayload, jsonOptions);
+        }
 
         return new OrderHistory(
-            Id: reader.GetInt64("order_history_item_id"),
-            OrderId: reader.GetInt64("order_id"),
-            OrderHistoryItemCreatedAt: reader.GetDateTime("order_history_item_created_at"),
-            OrderHistoryItemKind: reader.GetFieldValue<OrderHistoryItemKind>("order_history_item_kind"),
+            Id: dao.OrderHistoryItemId,
+            OrderId: dao.OrderId,
+            OrderHistoryItemCreatedAt: dao.OrderHistoryItemCreatedAt,
+            OrderHistoryItemKind: dao.OrderHistoryItemKind,
             OrderHistoryItemPayload: payload);
     }
 }

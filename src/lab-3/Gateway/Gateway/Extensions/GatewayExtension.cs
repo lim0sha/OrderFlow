@@ -1,7 +1,9 @@
 using Gateway.Configs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Presentation.Protos;
 
 namespace Gateway.Extensions;
 
@@ -11,25 +13,24 @@ public static class GatewayExtension
     {
         services.Configure<GrpcConnectionOptions>(configuration.GetSection("Grpc"));
 
-        services.AddControllers();
+        GrpcConnectionOptions grpcOptions = configuration.GetSection("Grpc").Get<GrpcConnectionOptions>() ?? throw new InvalidOperationException();
+        if (string.IsNullOrEmpty(grpcOptions.OrderServiceAddress))
+            throw new InvalidOperationException("OrderService gRPC address is not configured.");
 
+        if (string.IsNullOrEmpty(grpcOptions.ProductServiceAddress))
+            throw new InvalidOperationException("ProductService gRPC address is not configured.");
+
+        services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gateway API", Version = "v1" });
         });
 
-        string? orderAddress = configuration.GetValue<string>("Grpc:OrderServiceAddress");
-        if (string.IsNullOrEmpty(orderAddress))
-            throw new InvalidOperationException("OrderService gRPC address is not configured.");
-
-        string? productAddress = configuration.GetValue<string>("Grpc:ProductServiceAddress");
-        if (string.IsNullOrEmpty(productAddress))
-            throw new InvalidOperationException("ProductService gRPC address is not configured.");
-
-        services.AddGrpcClient<Presentation.Protos.OrderService.OrderServiceClient>(opt =>
+        services.AddGrpcClient<OrderService.OrderServiceClient>((sp, options) =>
             {
-                opt.Address = new Uri(orderAddress);
+                GrpcConnectionOptions grpcConfig = sp.GetRequiredService<IOptions<GrpcConnectionOptions>>().Value;
+                options.Address = new Uri(grpcConfig.OrderServiceAddress ?? throw new InvalidOperationException());
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
@@ -37,9 +38,10 @@ public static class GatewayExtension
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
             });
 
-        services.AddGrpcClient<Presentation.Protos.ProductService.ProductServiceClient>(opt =>
+        services.AddGrpcClient<ProductService.ProductServiceClient>((sp, options) =>
             {
-                opt.Address = new Uri(productAddress);
+                GrpcConnectionOptions grpcConfig = sp.GetRequiredService<IOptions<GrpcConnectionOptions>>().Value;
+                options.Address = new Uri(grpcConfig.ProductServiceAddress ?? throw new InvalidOperationException());
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {

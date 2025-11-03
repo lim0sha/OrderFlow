@@ -17,24 +17,24 @@ public class ProductRepository : IProductRepository
         _executor = executor;
     }
 
-    public async Task<long> Create(Product p, CancellationToken ct)
+    public async Task<long> Create(Product product, CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("Product_Create.sql");
         return await _executor.ExecuteScalarAsync<long>(
             sql,
             parameters =>
             {
-                parameters.AddWithValue("name", p.ProductName);
-                parameters.AddWithValue("price", p.ProductPrice);
+                parameters.AddWithValue("name", product.ProductName);
+                parameters.AddWithValue("price", product.ProductPrice);
             },
-            ct);
+            cancellationToken);
     }
 
     public async IAsyncEnumerable<Product> GetFiltered(
         int token,
         int volume,
         ProductRequestFiltered request,
-        [EnumeratorCancellation] CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("Product_GetFiltered.sql");
         await foreach (Product product in _executor.QueryAsync(
@@ -52,9 +52,25 @@ public class ProductRepository : IProductRepository
                                reader.GetInt64("product_id"),
                                reader.GetString("product_name"),
                                reader.GetDecimal("product_price")),
-                           ct))
+                           cancellationToken))
         {
             yield return product;
         }
+    }
+
+    public async Task<Product> GetProductByName(string name, CancellationToken cancellationToken)
+    {
+        string sql = RepositorySqlLoader.Load("Product_GetByName.sql");
+        return await _executor.QueryFirstOrDefaultAsync(
+            sql,
+            parameters =>
+            {
+                parameters.AddWithValue("name", name);
+            },
+            reader => new Product(
+                reader.GetInt64("product_id"),
+                reader.GetString("product_name"),
+                reader.GetDecimal("product_price")),
+            cancellationToken);
     }
 }

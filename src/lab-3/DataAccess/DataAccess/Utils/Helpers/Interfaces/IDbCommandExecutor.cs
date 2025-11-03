@@ -19,4 +19,10 @@ public interface IDbCommandExecutor
         Action<NpgsqlParameterCollection> configureParameters,
         Func<NpgsqlDataReader, T> map,
         CancellationToken ct = default);
+
+    Task<T?> QueryFirstOrDefaultAsync<T>(
+        string sql,
+        Action<NpgsqlParameterCollection> configureParameters,
+        Func<NpgsqlDataReader, T> map,
+        CancellationToken ct = default);
 }

@@ -5,9 +5,9 @@ using Gateway.Models.Responses.Orders.Complete;
 using Gateway.Models.Responses.Orders.Create;
 using Gateway.Models.Responses.Orders.RemoveItem;
 using Gateway.Models.Responses.Orders.Transfer;
+using Gateway.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Presentation.Protos;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Gateway.Controllers;
@@ -18,11 +18,11 @@ namespace Gateway.Controllers;
 public class OrderController : ControllerBase
 #pragma warning restore CA1506
 {
-    private readonly OrderService.OrderServiceClient _orderClient;
+    private readonly IOrderGatewayService _orderService;
 
-    public OrderController(OrderService.OrderServiceClient orderClient)
+    public OrderController(IOrderGatewayService orderService)
     {
-        _orderClient = orderClient;
+        _orderService = orderService;
     }
 
     [HttpPost("create")]
@@ -31,25 +31,13 @@ public class OrderController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(OrderNotFoundResponse))]
     public async Task<ActionResult<CreateOrderResponseBase>> CreateOrder([FromBody] CreateOrderRequestDto request)
     {
-        CreateOrderResponse grpcResponse = await _orderClient.CreateOrderAsync(new CreateOrderRequest
+        CreateOrderResponseBase response = await _orderService.CreateOrderAsync(request);
+        return response switch
         {
-            CreatedBy = request.CreatedBy,
-        });
-
-        return grpcResponse.ResultCase switch
-        {
-            CreateOrderResponse.ResultOneofCase.Success =>
-                Ok(new CreateOrderSuccessResponse()),
-
-            CreateOrderResponse.ResultOneofCase.Error =>
-                BadRequest(new OrderIsNotCreatedResponse(grpcResponse.Error.Message)),
-
-            CreateOrderResponse.ResultOneofCase.NotFound =>
-                NotFound(new OrderNotFoundResponse(grpcResponse.NotFound.Message)),
-
-            CreateOrderResponse.ResultOneofCase.None =>
-                NotFound(new CreateOrderNoneResponse(grpcResponse.NotFound.Message)),
-
+            CreateOrderSuccessResponse => Ok(response),
+            OrderIsNotCreatedResponse => BadRequest(response),
+            OrderNotFoundResponse => NotFound(response),
+            CreateOrderNoneResponse => NotFound(response),
             _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
@@ -60,96 +48,47 @@ public class OrderController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(AddItemOrderNotFoundResponse))]
     public async Task<ActionResult<AddItemResponseBase>> AddItem([FromBody] AddItemRequestDto request)
     {
-        AddItemResponse grpcResponse = await _orderClient.AddItemAsync(new AddItemRequest
+        AddItemResponseBase response = await _orderService.AddItemAsync(request);
+        return response switch
         {
-            OrderId = request.OrderId,
-            ProductId = request.ProductId,
-            Quantity = request.Quantity,
-            Deleted = request.Deleted,
-        });
-
-        return grpcResponse.ResultCase switch
-        {
-            AddItemResponse.ResultOneofCase.Success =>
-                Ok(new AddItemSuccessResponse(grpcResponse.Success.OrderItemId)),
-
-            AddItemResponse.ResultOneofCase.OrderIsNotCreated =>
-                BadRequest(new AddItemOrderIsNotCreatedResponse(grpcResponse.OrderIsNotCreated.Message)),
-
-            AddItemResponse.ResultOneofCase.OrderNotFound =>
-                NotFound(new AddItemOrderNotFoundResponse(grpcResponse.OrderNotFound.Message)),
-
-            AddItemResponse.ResultOneofCase.None =>
-                StatusCode(StatusCodes.Status500InternalServerError),
-
-            _ => StatusCode(500),
+            AddItemSuccessResponse => Ok(response),
+            AddItemOrderIsNotCreatedResponse => BadRequest(response),
+            AddItemOrderNotFoundResponse => NotFound(response),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
 
     [HttpPost("remove-item")]
     [SwaggerResponse(StatusCodes.Status200OK, "Item removed successfully", typeof(RemoveItemSuccessResponse))]
-    [SwaggerResponse(
-        StatusCodes.Status404NotFound,
-        "Order item not found",
-        typeof(RemoveItemOrderItemNotFoundResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Order item not found", typeof(RemoveItemOrderItemNotFoundResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(RemoveOrderNotFoundResponse))]
     public async Task<ActionResult<RemoveItemResponseBase>> RemoveItem([FromBody] RemoveItemRequestDto request)
     {
-        RemoveItemResponse grpcResponse = await _orderClient.RemoveItemAsync(new RemoveItemRequest
+        RemoveItemResponseBase response = await _orderService.RemoveItemAsync(request);
+        return response switch
         {
-            OrderId = request.OrderId,
-            OrderItemId = request.OrderItemId,
-        });
-
-        return grpcResponse.ResultCase switch
-        {
-            RemoveItemResponse.ResultOneofCase.Success =>
-                Ok(new RemoveItemSuccessResponse()),
-
-            RemoveItemResponse.ResultOneofCase.OrderItemNotFound =>
-                NotFound(new RemoveItemOrderItemNotFoundResponse(grpcResponse.OrderItemNotFound.Message)),
-
-            RemoveItemResponse.ResultOneofCase.None =>
-                StatusCode(StatusCodes.Status500InternalServerError),
-
-            RemoveItemResponse.ResultOneofCase.OrderIsNotCreated =>
-                NotFound(new RemoveItemOrderIsNotCreated(grpcResponse.OrderIsNotCreated.Message)),
-
-            RemoveItemResponse.ResultOneofCase.OrderNotFound =>
-                NotFound(new RemoveOrderNotFoundResponse(grpcResponse.OrderItemNotFound.Message)),
-
-            _ => BadRequest(),
+            RemoveItemSuccessResponse => Ok(response),
+            RemoveItemOrderItemNotFoundResponse => NotFound(response),
+            RemoveItemOrderIsNotCreated => NotFound(response),
+            RemoveOrderNotFoundResponse => NotFound(response),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
 
     [HttpPost("transfer-to-work/{orderId:long}")]
     [SwaggerResponse(StatusCodes.Status200OK, "Order transferred to work", typeof(TransferToWorkSuccessResponse))]
-    [SwaggerResponse(
-        StatusCodes.Status409Conflict,
-        "Already processing",
-        typeof(TransferToWorkAlreadyProcessingResponse))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Already processing", typeof(TransferToWorkAlreadyProcessingResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(TransferToWorkOrderNotFoundResponse))]
     public async Task<ActionResult<TransferToWorkResponseBase>> TransferToWork(long orderId)
     {
-        TransferToWorkResponse grpcResponse =
-            await _orderClient.TransferToWorkAsync(new TransferToWorkRequest { OrderId = orderId });
-
-        return grpcResponse.ResultCase switch
+        TransferToWorkResponseBase response = await _orderService.TransferToWorkAsync(orderId);
+        return response switch
         {
-            TransferToWorkResponse.ResultOneofCase.Success =>
-                Ok(new TransferToWorkSuccessResponse()),
-
-            TransferToWorkResponse.ResultOneofCase.AlreadyProcessing =>
-                Conflict(new TransferToWorkAlreadyProcessingResponse(grpcResponse.AlreadyProcessing.Message)),
-
-            TransferToWorkResponse.ResultOneofCase.None =>
-                NotFound(new TransferToWorkNoneResponse(grpcResponse.OrderNotFound.Message)),
-
-            TransferToWorkResponse.ResultOneofCase.OrderIsNotCreated =>
-                NotFound(new TransferToWorkOrderIsNotCreatedResponse(grpcResponse.OrderIsNotCreated.Message)),
-
-            TransferToWorkResponse.ResultOneofCase.OrderNotFound =>
-                NotFound(new TransferToWorkOrderNotFoundResponse(grpcResponse.OrderNotFound.Message)),
-
-            _ => BadRequest(),
+            TransferToWorkSuccessResponse => Ok(response),
+            TransferToWorkAlreadyProcessingResponse => Conflict(response),
+            TransferToWorkOrderIsNotCreatedResponse => NotFound(response),
+            TransferToWorkOrderNotFoundResponse => NotFound(response),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
 
@@ -159,81 +98,38 @@ public class OrderController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(CompleteOrderNotFoundResponse))]
     public async Task<ActionResult<CompleteOrderResponseBase>> Complete(long orderId)
     {
-        CompleteOrderResponse grpcResponse =
-            await _orderClient.CompleteOrderAsync(new CompleteOrderRequest { OrderId = orderId });
-
-        return grpcResponse.ResultCase switch
+        CompleteOrderResponseBase response = await _orderService.CompleteOrderAsync(orderId);
+        return response switch
         {
-            CompleteOrderResponse.ResultOneofCase.Success =>
-                Ok(new CompleteOrderSuccessResponse()),
-
-            CompleteOrderResponse.ResultOneofCase.AlreadyCompleted =>
-                Conflict(new CompleteOrderAlreadyCompletedResponse(grpcResponse.AlreadyCompleted.Message)),
-
-            CompleteOrderResponse.ResultOneofCase.OrderNotFound =>
-                NotFound(new CompleteOrderNotFoundResponse(grpcResponse.OrderNotFound.Message)),
-
-            CompleteOrderResponse.ResultOneofCase.None =>
-                NotFound(new CompleteOrderNoneResponse(grpcResponse.OrderNotFound.Message)),
-
-            _ => StatusCode(500),
+            CompleteOrderSuccessResponse => Ok(response),
+            CompleteOrderAlreadyCompletedResponse => Conflict(response),
+            CompleteOrderNotFoundResponse => NotFound(response),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
 
     [HttpPost("cancel/{orderId:long}")]
     [SwaggerResponse(StatusCodes.Status200OK, "Order cancelled", typeof(CancelOrderSuccessResponse))]
-    [SwaggerResponse(
-        StatusCodes.Status409Conflict,
-        "Order already cancelled",
-        typeof(CancelOrderAlreadyCancelledResponse))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Order already cancelled", typeof(CancelOrderAlreadyCancelledResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(CancelOrderOrderNotFoundResponse))]
     public async Task<ActionResult<CancelOrderResponseBase>> Cancel(long orderId)
     {
-        CancelOrderResponse grpcResponse = await _orderClient.CancelAsync(new CancelOrderRequest { OrderId = orderId });
-
-        return grpcResponse.ResultCase switch
+        CancelOrderResponseBase response = await _orderService.CancelOrderAsync(orderId);
+        return response switch
         {
-            CancelOrderResponse.ResultOneofCase.Success =>
-                Ok(new CancelOrderSuccessResponse()),
-
-            CancelOrderResponse.ResultOneofCase.AlreadyCancelled =>
-                Conflict(new CancelOrderAlreadyCancelledResponse(grpcResponse.AlreadyCancelled.Message)),
-            CancelOrderResponse.ResultOneofCase.None =>
-                NotFound(new CancelOrderNoneResponse(grpcResponse.OrderNotFound.Message)),
-
-            CancelOrderResponse.ResultOneofCase.OrderNotFound =>
-                NotFound(new CancelOrderOrderNotFoundResponse(grpcResponse.OrderNotFound.Message)),
-
-            CancelOrderResponse.ResultOneofCase.AlreadyCompleted =>
-                NotFound(new CancelOrderAlreadyCompletedResponse(grpcResponse.OrderNotFound.Message)),
-
-            _ => BadRequest(),
+            CancelOrderSuccessResponse => Ok(response),
+            CancelOrderAlreadyCancelledResponse => Conflict(response),
+            CancelOrderAlreadyCompletedResponse => NotFound(response),
+            CancelOrderOrderNotFoundResponse => NotFound(response),
+            _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
 
     [HttpGet("history")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Returns order history")]
-    public async Task<IActionResult> GetHistory([FromQuery] GetHistoryRequestDto request)
+    [SwaggerResponse(StatusCodes.Status200OK, "Returns order history", Type = typeof(IEnumerable<OrderHistoryDto>))]
+    public async Task<ActionResult<IEnumerable<OrderHistoryDto>>> GetHistory([FromQuery] GetHistoryRequestDto request)
     {
-        GetHistoryResponse grpcResponse = await _orderClient.GetHistoryByFilterAsync(new GetHistoryRequest
-        {
-            Cursor = request.Cursor,
-            Volume = request.Volume,
-            Filter = new OrderHistoryRequestFiltered
-            {
-                OrderId = request.Filter.OrderId,
-                Kind = (OrderHistoryItemKind)request.Filter.Kind,
-            },
-        });
-
-        IEnumerable<OrderHistoryDto> history = grpcResponse.History.Select(h => new OrderHistoryDto
-        {
-            Id = h.Id,
-            OrderId = h.OrderId,
-            CreatedAt = h.CreatedAt,
-            Kind = h.Kind.ToString(),
-            Payload = h.Payload,
-        });
-
+        IEnumerable<OrderHistoryDto> history = await _orderService.GetHistoryAsync(request);
         return Ok(history);
     }
 }

@@ -1,3 +1,4 @@
+using DataAccess.Exceptions;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -18,9 +19,17 @@ public class ExceptionInterceptor : Interceptor
         {
             throw;
         }
+        catch (ConstraintException ex)
+        {
+            throw new RpcException(
+                new Status(StatusCode.InvalidArgument, ex.Message),
+                $"Constraint violation: {ex.Message}");
+        }
         catch (Exception ex)
         {
-            throw new RpcException(new Status(StatusCode.Internal, "Internal server error: " + ex.Message));
+            throw new RpcException(
+                new Status(StatusCode.Internal, "Internal server error"),
+                $"Unexpected error: {ex.Message}");
         }
     }
 }

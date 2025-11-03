@@ -2,18 +2,30 @@ syntax = "proto3";
 
 option csharp_namespace = "Presentation.Protos";
 
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc AddItem(AddItemRequest) returns (AddItemResponse);
+  rpc RemoveItem(RemoveItemRequest) returns (RemoveItemResponse);
+  rpc TransferToWork(TransferToWorkRequest) returns (TransferToWorkResponse);
+  rpc CompleteOrder(CompleteOrderRequest) returns (CompleteOrderResponse);
+  rpc Cancel(CancelOrderRequest) returns (CancelOrderResponse);
+  rpc GetHistoryByFilter(GetHistoryRequest) returns (GetHistoryResponse);
+}
+
 enum OrderState {
-  CREATED = 0;
-  PROCESSING = 1;
-  COMPLETED = 2;
-  CANCELLED = 3;
+  UNSPECIFIED_ORDER_STATE = 0;
+  CREATED = 1;
+  PROCESSING = 2;
+  COMPLETED = 3;
+  CANCELLED = 4;
 }
 
 enum OrderHistoryItemKind {
-  HISTORY_CREATED = 0;
-  ITEM_ADDED = 1;
-  ITEM_REMOVED = 2;
-  STATE_CHANGED = 3;
+  UNSPECIFIED_ORDER_HISTORY_ITEM_KIND = 0;
+  HISTORY_CREATED = 1;
+  ITEM_ADDED = 2;
+  ITEM_REMOVED = 3;
+  STATE_CHANGED = 4;
 }
 
 message Order {
@@ -176,14 +188,4 @@ message GetHistoryRequest {
 
 message GetHistoryResponse {
   repeated OrderHistory history = 1;
-}
-
-service OrderService {
-  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
-  rpc AddItem(AddItemRequest) returns (AddItemResponse);
-  rpc RemoveItem(RemoveItemRequest) returns (RemoveItemResponse);
-  rpc TransferToWork(TransferToWorkRequest) returns (TransferToWorkResponse);
-  rpc CompleteOrder(CompleteOrderRequest) returns (CompleteOrderResponse);
-  rpc Cancel(CancelOrderRequest) returns (CancelOrderResponse);
-  rpc GetHistoryByFilter(GetHistoryRequest) returns (GetHistoryResponse);
 }

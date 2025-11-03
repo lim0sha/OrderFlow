@@ -19,45 +19,45 @@ public class OrderItemRepository : IOrderItemRepository
         _orderItemMapper = orderItemMapper;
     }
 
-    public async Task<long> Create(OrderItem oi, CancellationToken ct)
+    public async Task<long> Create(OrderItem orderItem, CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("OrderItem_Create.sql");
         return await _executor.ExecuteScalarAsync<long>(
             sql,
             parameters =>
             {
-                parameters.AddWithValue("order_id", oi.OrderId);
-                parameters.AddWithValue("product_id", oi.ProductId);
-                parameters.AddWithValue("order_item_quantity", oi.OrderItemQuantity);
-                parameters.AddWithValue("order_item_deleted", oi.OrderItemDeleted);
+                parameters.AddWithValue("order_id", orderItem.OrderId);
+                parameters.AddWithValue("product_id", orderItem.ProductId);
+                parameters.AddWithValue("order_item_quantity", orderItem.OrderItemQuantity);
+                parameters.AddWithValue("order_item_deleted", orderItem.OrderItemDeleted);
             },
-            ct);
+            cancellationToken);
     }
 
-    public async Task Update(OrderItem oi, CancellationToken ct)
+    public async Task Update(OrderItem orderItem, CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("OrderItem_Update.sql");
         await _executor.ExecuteAsync(
             sql,
             parameters =>
             {
-                parameters.AddWithValue("order_item_id", oi.Id);
-                parameters.AddWithValue("order_id", oi.OrderId);
-                parameters.AddWithValue("product_id", oi.ProductId);
-                parameters.AddWithValue("order_item_quantity", oi.OrderItemQuantity);
-                parameters.AddWithValue("order_item_deleted", oi.OrderItemDeleted);
+                parameters.AddWithValue("order_item_id", orderItem.Id);
+                parameters.AddWithValue("order_id", orderItem.OrderId);
+                parameters.AddWithValue("product_id", orderItem.ProductId);
+                parameters.AddWithValue("order_item_quantity", orderItem.OrderItemQuantity);
+                parameters.AddWithValue("order_item_deleted", orderItem.OrderItemDeleted);
             },
-            ct);
+            cancellationToken);
     }
 
-    public async Task<OrderItem> GetById(long id, CancellationToken ct)
+    public async Task<OrderItem> GetById(long id, CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("OrderItem_GetById.sql");
         await foreach (OrderItem item in _executor.QueryAsync(
                            sql,
                            parameters => parameters.AddWithValue("id", id),
                            reader => _orderItemMapper.MapOrderItem(reader),
-                           ct))
+                           cancellationToken))
         {
             return item;
         }
@@ -69,7 +69,7 @@ public class OrderItemRepository : IOrderItemRepository
         int position,
         int volume,
         OrderItemRequestFiltered request,
-        [EnumeratorCancellation] CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("OrderItem_GetByFilter.sql");
         await foreach (OrderItem item in _executor.QueryAsync(
@@ -83,7 +83,7 @@ public class OrderItemRepository : IOrderItemRepository
                                parameters.AddWithValue("order_item_deleted", request.IsDeleted);
                            },
                            reader => _orderItemMapper.MapOrderItem(reader),
-                           ct))
+                           cancellationToken))
         {
             yield return item;
         }

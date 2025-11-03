@@ -26,28 +26,28 @@ public class ProductController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Save failed", typeof(SaveFailedResponse))]
     public async Task<ActionResult<CreateProductResponseBase>> CreateProduct([FromBody] CreateProductRequestDto request)
     {
-        CreateProductResponse grpcResponse = await _productClient.CreateProductAsync(new CreateProductRequest
+        CreateProductResponse response = await _productClient.CreateProductAsync(new CreateProductRequest
         {
             ProductName = request.ProductName,
             ProductPrice = (double)request.ProductPrice,
         });
 
-        return grpcResponse.ResultCase switch
+        return response.ResultCase switch
         {
             CreateProductResponse.ResultOneofCase.Success =>
-                Ok(new CreateProductSuccessResponse(grpcResponse.Success.ProductId)),
+                Ok(new CreateProductSuccessResponse(response.Success.ProductId)),
 
             CreateProductResponse.ResultOneofCase.ValidationError =>
-                BadRequest(new ValidationErrorResponse(grpcResponse.ValidationError.Message)),
+                BadRequest(new ValidationErrorResponse(response.ValidationError.Message)),
 
             CreateProductResponse.ResultOneofCase.NameExists =>
-                Conflict(new ProductNameAlreadyExistsResponse(grpcResponse.NameExists.Message)),
+                Conflict(new ProductNameAlreadyExistsResponse(response.NameExists.Message)),
 
             CreateProductResponse.ResultOneofCase.InvalidPrice =>
-                BadRequest(new InvalidPriceResponse(grpcResponse.InvalidPrice.Message)),
+                BadRequest(new InvalidPriceResponse(response.InvalidPrice.Message)),
 
             CreateProductResponse.ResultOneofCase.SaveFailed =>
-                StatusCode(StatusCodes.Status500InternalServerError, new SaveFailedResponse(grpcResponse.SaveFailed.Message)),
+                StatusCode(StatusCodes.Status500InternalServerError, new SaveFailedResponse(response.SaveFailed.Message)),
 
             CreateProductResponse.ResultOneofCase.None =>
                 NotFound(new CreateProductNoneResponse()),

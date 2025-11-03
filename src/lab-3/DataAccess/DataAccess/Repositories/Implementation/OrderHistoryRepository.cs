@@ -31,26 +31,26 @@ public class OrderHistoryRepository : IOrderHistoryRepository
         _orderHistoryMapper = orderHistoryMapper ?? new OrderHistoryMapper();
     }
 
-    public async Task<long> Create(OrderHistory oh, CancellationToken ct)
+    public async Task<long> Create(OrderHistory orderHistory, CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("OrderHistory_Create.sql");
         return await _executor.ExecuteScalarAsync<long>(
             sql,
             parameters =>
             {
-                parameters.AddWithValue("order_id", oh.OrderId);
-                parameters.AddWithValue("order_history_item_created_at", oh.OrderHistoryItemCreatedAt);
-                parameters.AddWithValue("order_history_item_kind", oh.OrderHistoryItemKind);
-                parameters.AddWithValue("order_history_item_payload", JsonSerializer.Serialize(oh.OrderHistoryItemPayload, _jsonOptions));
+                parameters.AddWithValue("order_id", orderHistory.OrderId);
+                parameters.AddWithValue("order_history_item_created_at", orderHistory.OrderHistoryItemCreatedAt);
+                parameters.AddWithValue("order_history_item_kind", orderHistory.OrderHistoryItemKind);
+                parameters.AddWithValue("order_history_item_payload", JsonSerializer.Serialize(orderHistory.OrderHistoryItemPayload, _jsonOptions));
             },
-            ct);
+            cancellationToken);
     }
 
     public async IAsyncEnumerable<OrderHistory> GetFiltered(
         int position,
         int volume,
         OrderHistoryRequestFiltered request,
-        [EnumeratorCancellation] CancellationToken ct)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         string sql = RepositorySqlLoader.Load("OrderHistory_GetFiltered.sql");
         await foreach (OrderHistory history in _executor.QueryAsync(
@@ -63,7 +63,7 @@ public class OrderHistoryRepository : IOrderHistoryRepository
                                parameters.Add(new NpgsqlParameter<OrderHistoryItemKind?>("order_history_item_kind", request.OrderHistoryItemKind));
                            },
                            reader => _orderHistoryMapper.MapOrderHistory(reader, _jsonOptions),
-                           ct))
+                           cancellationToken))
         {
             yield return history;
         }

@@ -2,6 +2,10 @@ syntax = "proto3";
 
 option csharp_namespace = "Presentation.Protos";
 
+service ProductService {
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+}
+
 message Product {
   int64 id = 1;
   string product_name = 2;
@@ -41,8 +45,4 @@ message CreateProductResponse {
     InvalidPrice invalid_price = 4;
     SaveFailed save_failed = 5;
   }
-}
-
-service ProductService {
-  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
 }

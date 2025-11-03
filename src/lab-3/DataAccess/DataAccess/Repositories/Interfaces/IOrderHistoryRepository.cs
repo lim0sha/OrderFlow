@@ -5,11 +5,11 @@ namespace DataAccess.Repositories.Interfaces;
 
 public interface IOrderHistoryRepository
 {
-    Task<long> Create(OrderHistory oh, CancellationToken ct);
+    Task<long> Create(OrderHistory orderHistory, CancellationToken cancellationToken);
 
     IAsyncEnumerable<OrderHistory> GetFiltered(
         int position,
         int volume,
         OrderHistoryRequestFiltered request,
-        CancellationToken ct);
+        CancellationToken cancellationToken);
 }

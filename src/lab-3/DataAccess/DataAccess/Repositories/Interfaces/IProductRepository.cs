@@ -5,7 +5,9 @@ namespace DataAccess.Repositories.Interfaces;
 
 public interface IProductRepository
 {
-    Task<long> Create(Product p, CancellationToken ct);
+    Task<long> Create(Product product, CancellationToken cancellationToken);
 
-    IAsyncEnumerable<Product> GetFiltered(int token, int volume, ProductRequestFiltered request, CancellationToken ct);
+    Task<Product> GetProductByName(string name, CancellationToken cancellationToken);
+
+    IAsyncEnumerable<Product> GetFiltered(int token, int volume, ProductRequestFiltered request, CancellationToken cancellationToken);
 }

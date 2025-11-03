@@ -1,5 +1,4 @@
 using DataAccess.Extensions;
-using DataAccess.Models.Entities.Common.ResultTypes;
 using DataAccess.Models.Entities.Orders;
 using DataAccess.Models.Entities.Products;
 using DataAccess.Models.Enums;
@@ -19,7 +18,6 @@ internal abstract class Program
     private static async Task Main(string[] args)
 #pragma warning restore CA1506
     {
-        AppContext.SetSwitch("System.Transactions.EnableAsyncFlow", true);
         using IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((_, builder) =>
             {
@@ -43,63 +41,70 @@ internal abstract class Program
         IProductService productService = scope.ServiceProvider.GetRequiredService<IProductService>();
         IOrderService orderService = scope.ServiceProvider.GetRequiredService<IOrderService>();
         IOrderHistoryRepository orderHistoryRepo = scope.ServiceProvider.GetRequiredService<IOrderHistoryRepository>();
+        IProductRepository productRepository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+        IOrderRepository orderRepository = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
 
-        CancellationToken ct = CancellationToken.None;
+        using var cts = new CancellationTokenSource();
+        CancellationToken ct = cts.Token;
 
         try
         {
-            ProductOperationResult laptopResult = await productService.Create(new Product(0, "Laptop", 1200.0m), ct);
-            ProductOperationResult mouseResult = await productService.Create(new Product(0, "Mouse", 25.5m), ct);
+            bool laptopResult = await productService.Create(new Product(0, "Laptop", 1200.0m), ct);
+            bool mouseResult = await productService.Create(new Product(0, "Mouse", 25.5m), ct);
 
-            if (laptopResult.GetErrorType() is not null || mouseResult.GetErrorType() is not null)
+            if (!laptopResult || !mouseResult)
                 throw new Exception("Failed to create products");
 
-            long laptopId = ((ProductOperationResult.Success)laptopResult).ProductId;
-            long mouseId = ((ProductOperationResult.Success)mouseResult).ProductId;
+            Product laptop = await productRepository.GetProductByName("Laptop", ct);
+            Product mouse = await productRepository.GetProductByName("Mouse", ct);
+
+            long laptopId = laptop.Id;
+            long mouseId = mouse.Id;
 
             if (laptopId == 0 || mouseId == 0)
                 throw new Exception("Product IDs cannot be 0");
 
             System.Console.WriteLine($"[INFO]: Created products: Laptop (ID={laptopId}), Mouse (ID={mouseId})");
 
-            OrderOperationResult orderResult = await orderService.Create(
-                new Order(0, OrderState.Created, DateTime.UtcNow, "test-user"),
-                ct);
+            bool orderResult = await orderService.Create(new Order(0, OrderState.Created, DateTime.UtcNow, "test-user"), ct);
 
-            if (orderResult is not OrderOperationResult.Success orderSuccess)
+            if (!orderResult)
                 throw new Exception("Failed to create order");
 
-            long orderId = orderSuccess.OrderItemId ?? throw new Exception("Failed to get order ID");
+            Order order = await orderRepository.GetOrderByUser("test-user", ct);
+            long orderId = order.Id;
+
+            if (orderId == 0)
+                throw new Exception("Failed to get order ID");
 
             System.Console.WriteLine($"[INFO]: Created order ID={orderId}");
 
-            OrderOperationResult addItem1 = await orderService.AddItem(
-                new OrderItem(0, orderId, laptopId, 1, false),
-                ct);
-            OrderOperationResult addItem2 = await orderService.AddItem(
-                new OrderItem(0, orderId, mouseId, 2, false),
-                ct);
+            bool addItem1 = await orderService.AddItem(new OrderItem(0, orderId, laptopId, 1, false), ct);
+            bool addItem2 = await orderService.AddItem(new OrderItem(0, orderId, mouseId, 2, false), ct);
 
-            if (addItem1.GetErrorType() is not null || addItem2.GetErrorType() is not null)
+            if (!addItem1 || !addItem2)
                 throw new Exception("Failed to add items");
 
-            long mouseOrderItemId = ((OrderOperationResult.Success)addItem2).OrderItemId ??
-                                    throw new Exception("Mouse order item ID is null");
+            OrderItem mouseOrderItem = await orderRepository.GetOrderItemByProduct(mouseId, orderId, ct);
+            long mouseOrderItemId = mouseOrderItem.Id;
+
+            if (mouseOrderItemId == 0)
+                throw new Exception("Mouse order item ID is null");
 
             System.Console.WriteLine($"[INFO]: Added items; mouse item ID = {mouseOrderItemId}");
 
-            OrderOperationResult removeResult = await orderService.RemoveItem(orderId, mouseOrderItemId, ct);
-            if (removeResult.GetErrorType() is not null)
+            bool removeResult = await orderService.RemoveItem(orderId, mouseOrderItemId, ct);
+            if (!removeResult)
                 throw new Exception("Failed to remove item");
             System.Console.WriteLine("[INFO]: Removed mouse from order");
 
-            OrderOperationResult transferResult = await orderService.TransferToWork(orderId, ct);
-            if (transferResult.GetErrorType() is not null)
+            bool transferResult = await orderService.TransferToWork(orderId, ct);
+            if (!transferResult)
                 throw new Exception("Failed to transfer to work");
             System.Console.WriteLine("[INFO]: Order transferred to 'processing'");
 
-            OrderOperationResult completeResult = await orderService.CompleteOrder(orderId, ct);
-            if (completeResult.GetErrorType() is not null)
+            bool completeResult = await orderService.CompleteOrder(orderId, ct);
+            if (!completeResult)
                 throw new Exception("Failed to complete order");
             System.Console.WriteLine("[INFO]: Order completed");
 

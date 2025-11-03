@@ -36,6 +36,12 @@
         <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_GetById.sql" />
         <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_GetFiltered.sql" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="Repositories/Resources/Sql/Product_GetByName.sql" />
+        <EmbeddedResource Include="Repositories/Resources/Sql/Order_GetByUser.sql" />
+        <EmbeddedResource Include="Repositories/Resources/Sql/OrderItem_GetByProduct.sql" />
+    </ItemGroup>
 
     <ItemGroup>
         <None Update="appsettings.json">

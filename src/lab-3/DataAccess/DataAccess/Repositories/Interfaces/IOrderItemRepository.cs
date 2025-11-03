@@ -5,15 +5,15 @@ namespace DataAccess.Repositories.Interfaces;
 
 public interface IOrderItemRepository
 {
-    Task<long> Create(OrderItem oi, CancellationToken ct);
+    Task<long> Create(OrderItem orderItem, CancellationToken cancellationToken);
 
-    Task<OrderItem> GetById(long id, CancellationToken ct);
+    Task<OrderItem> GetById(long id, CancellationToken cancellationToken);
 
     IAsyncEnumerable<OrderItem> GetByFilter(
         int position,
         int volume,
         OrderItemRequestFiltered request,
-        CancellationToken ct);
+        CancellationToken cancellationToken);
 
-    Task Update(OrderItem oi, CancellationToken ct);
+    Task Update(OrderItem orderItem, CancellationToken cancellationToken);
 }

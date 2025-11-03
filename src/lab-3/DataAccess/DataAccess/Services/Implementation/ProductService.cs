@@ -1,4 +1,4 @@
-using DataAccess.Models.Entities.Common.ResultTypes;
+using DataAccess.Exceptions;
 using DataAccess.Models.Entities.Products;
 using DataAccess.Repositories.Interfaces;
 using DataAccess.Services.Interfaces;
@@ -20,32 +20,27 @@ public class ProductService : IProductService
         _logger = logger;
     }
 
-    public async Task<ProductOperationResult> Create(Product p, CancellationToken ct)
+    public async Task<bool> Create(Product p, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(p.ProductName))
+        if (!p.Validate())
         {
-            return new ProductOperationResult.ValidationError("Product name is required.");
-        }
-
-        if (p.ProductPrice <= 0)
-        {
-            return new ProductOperationResult.InvalidPrice();
+            return false;
         }
 
         try
         {
-            long productId = await _productRepository.Create(p, ct);
-            return new ProductOperationResult.Success(productId);
+            await _productRepository.Create(p, ct);
+            return true;
         }
         catch (NpgsqlException ex) when (ex.SqlState == "23505")
         {
             _logger.LogWarning(ex, "Product creation failed because of duplicate name: {ProductName}", p.ProductName);
-            return new ProductOperationResult.ProductNameAlreadyExists();
+            throw new ConstraintException("ex.SqlState == \"23505\" error");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during product creation");
-            return new ProductOperationResult.SaveFailed("An unexpected error occurred while saving the product.");
+            return false;
         }
     }
 }
