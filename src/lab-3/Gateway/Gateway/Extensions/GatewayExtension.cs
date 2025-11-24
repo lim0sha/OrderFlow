@@ -2,7 +2,7 @@ using Gateway.Configs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Presentation.Protos;
 
 namespace Gateway.Extensions;
