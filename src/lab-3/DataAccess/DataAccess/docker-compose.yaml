@@ -1,0 +1,14 @@
+services:
+  postgres-lab3:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: lab3_test
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - lab3_data:/var/lib/postgresql/data
+
+volumes:
+  lab3_data:
