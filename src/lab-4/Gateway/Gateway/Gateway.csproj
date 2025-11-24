@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentMigrator" />
+      <PackageReference Include="FluentMigrator.Runner" />
+      <PackageReference Include="Grpc.AspNetCore" />
+      <PackageReference Include="Grpc.AspNetCore.Server" />
+      <PackageReference Include="Microsoft.AspNetCore.Hosting" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" />
+      <PackageReference Include="Microsoft.OpenApi" />
+      <PackageReference Include="Npgsql" />
+      <PackageReference Include="Swashbuckle.AspNetCore" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\lab-3\Presentation\Presentation\Presentation.csproj" />
+    </ItemGroup>
+
+</Project>
