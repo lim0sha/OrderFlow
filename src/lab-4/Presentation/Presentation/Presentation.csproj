@@ -8,49 +8,28 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Protobuf Include="Protos\order_service.proto">
-        <GrpcServices>Client,Server</GrpcServices>
-        <Access>Public</Access>
-        <ProtoCompile>True</ProtoCompile>
-        <CompileOutputs>True</CompileOutputs>
-        <OutputDir>obj\Debug\net9.0\</OutputDir>
-        <Generator>MSBuild:Compile</Generator>
-      </Protobuf>
-      <Protobuf Include="Protos\product_service.proto">
-        <GrpcServices>Client,Server</GrpcServices>
-        <Access>Public</Access>
-        <ProtoCompile>True</ProtoCompile>
-        <CompileOutputs>True</CompileOutputs>
-        <OutputDir>obj\Debug\net9.0\</OutputDir>
-        <Generator>MSBuild:Compile</Generator>
-      </Protobuf>
+        <ProjectReference Include="..\..\..\lab-2\Task1\Task1\Task1.csproj"/>
+        <ProjectReference Include="..\..\..\lab-2\Task2\Task2\Task2.csproj"/>
+        <ProjectReference Include="..\..\DataAccess\DataAccess\DataAccess.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="appsettings.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <PackageReference Include="Google.Protobuf"/>
+        <PackageReference Include="Grpc.AspNetCore"/>
+        <PackageReference Include="Grpc.Tools">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
-
+    
     <ItemGroup>
-      <PackageReference Include="FluentMigrator" />
-      <PackageReference Include="FluentMigrator.Runner" />
-      <PackageReference Include="Microsoft.AspNetCore.Hosting" />
-      <PackageReference Include="Microsoft.Extensions.Configuration" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-      <PackageReference Include="Microsoft.Extensions.Hosting" />
-      <PackageReference Include="Microsoft.OpenApi" />
-      <PackageReference Include="Npgsql" />
+        <Protobuf Include="Protos\*.proto" GrpcServices="Client,Server"/>
     </ItemGroup>
-
+    
     <ItemGroup>
-      <ProjectReference Include="..\..\..\lab-2\Task1\Task1\Task1.csproj" />
-      <ProjectReference Include="..\..\..\lab-2\Task2\Task2\Task2.csproj" />
-      <ProjectReference Include="..\..\..\lab-2\Task3\Task3\Task3.csproj" />
-      <ProjectReference Include="..\..\..\lab-3\Presentation\Presentation\Presentation.csproj" />
-      <ProjectReference Include="..\..\DataAccess\DataAccess\DataAccess.csproj" />
-      <ProjectReference Include="..\..\Gateway\Gateway\Gateway.csproj" />
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>
