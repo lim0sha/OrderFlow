@@ -2,7 +2,7 @@ using Gateway.Configs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using Presentation.Protos;
 
 namespace Gateway.Extensions;
@@ -24,7 +24,11 @@ public static class GatewayExtension
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Gateway API", Version = "v1" });
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Gateway API",
+                Version = "v1",
+            });
         });
 
         services.AddGrpcClient<OrderService.OrderServiceClient>((sp, options) =>

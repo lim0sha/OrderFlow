@@ -12,19 +12,23 @@
       <PackageReference Include="FluentMigrator.Runner" />
       <PackageReference Include="Grpc.AspNetCore" />
       <PackageReference Include="Grpc.AspNetCore.Server" />
+      <PackageReference Include="Grpc.Tools">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="Microsoft.AspNetCore.Hosting" />
       <PackageReference Include="Microsoft.Extensions.Configuration" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
       <PackageReference Include="Microsoft.Extensions.Hosting" />
-      <PackageReference Include="Microsoft.OpenApi" />
       <PackageReference Include="Npgsql" />
       <PackageReference Include="Swashbuckle.AspNetCore" />
       <PackageReference Include="Swashbuckle.AspNetCore.Annotations" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\lab-3\Presentation\Presentation\Presentation.csproj" />
+      <ProjectReference Include="..\..\DataAccess\DataAccess\DataAccess.csproj" />
+      <ProjectReference Include="..\..\Presentation\Presentation\Presentation.csproj" />
     </ItemGroup>
 
 </Project>
