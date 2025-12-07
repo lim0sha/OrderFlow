@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Confluent.Kafka" />
         <PackageReference Include="Google.Protobuf"/>
         <PackageReference Include="Grpc.AspNetCore"/>
         <PackageReference Include="Grpc.Tools">
@@ -30,6 +31,10 @@
         <None Update="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Kafka*/Protos/*.proto" GrpcServices="None" />
     </ItemGroup>
 
 </Project>
