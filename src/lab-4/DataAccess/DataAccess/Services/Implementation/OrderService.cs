@@ -180,11 +180,9 @@ public class OrderService : IOrderService
         {
             Order order = await _orderRepository.GetById(id, ct);
 
-            switch (order.OrderState)
+            if (order.OrderState != OrderState.Created)
             {
-                case OrderState.Completed:
-                case OrderState.Cancelled:
-                    return false;
+                return false;
             }
 
             Order updatedOrder = order with { OrderState = OrderState.Cancelled };
