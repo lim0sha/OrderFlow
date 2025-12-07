@@ -27,6 +27,9 @@ public class ExceptionInterceptor : Interceptor
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[gRPC Internal Error:] {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+
             throw new RpcException(
                 new Status(StatusCode.Internal, "Internal server error"),
                 $"Unexpected error: {ex.Message}");
