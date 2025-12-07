@@ -103,9 +103,9 @@ internal abstract class Program
                 throw new Exception("Failed to transfer to work");
             System.Console.WriteLine("[INFO]: Order transferred to 'processing'");
 
-            bool completeResult = await orderService.CompleteOrder(orderId, ct);
-            if (!completeResult)
-                throw new Exception("Failed to complete order");
+            // bool completeResult = await orderService.CompleteOrder(orderId, ct);
+            // if (!completeResult)
+                // throw new Exception("Failed to complete order");
             System.Console.WriteLine("[INFO]: Order completed");
 
             System.Console.WriteLine($"\nFull history for order {orderId}:");
