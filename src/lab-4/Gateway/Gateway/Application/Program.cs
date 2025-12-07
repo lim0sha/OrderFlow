@@ -19,14 +19,12 @@ internal abstract class Program
         builder.Services.AddGatewayServices(builder.Configuration);
         builder.Services.AddSingleton<IOrderGatewayService, OrderGatewayService>();
 
+        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         WebApplication app = builder.Build();
 
         app.UseMiddleware<GrpcExceptionMiddleware>();
         app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Gateway lab-3 API v1");
-        });
+        app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Gateway lab-4 API v1"));
         app.UseHttpsRedirection();
         app.MapControllers();
 
