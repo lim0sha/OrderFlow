@@ -13,8 +13,6 @@ public interface IOrderService
 
     Task<bool> TransferToWork(long id, CancellationToken ct);
 
-    Task<bool> CompleteOrder(long id, CancellationToken ct);
-
     Task<bool> Cancel(long id, CancellationToken ct);
 
     IAsyncEnumerable<OrderHistory> GetHistoryByFilter(
