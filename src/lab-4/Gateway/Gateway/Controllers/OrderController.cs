@@ -1,7 +1,6 @@
 using Gateway.Models.DTO.Orders;
 using Gateway.Models.Responses.Orders.AddItem;
 using Gateway.Models.Responses.Orders.Cancel;
-using Gateway.Models.Responses.Orders.Complete;
 using Gateway.Models.Responses.Orders.Create;
 using Gateway.Models.Responses.Orders.RemoveItem;
 using Gateway.Models.Responses.Orders.Transfer;
@@ -88,22 +87,6 @@ public class OrderController : ControllerBase
             TransferToWorkAlreadyProcessingResponse => Conflict(response),
             TransferToWorkOrderIsNotCreatedResponse => NotFound(response),
             TransferToWorkOrderNotFoundResponse => NotFound(response),
-            _ => StatusCode(StatusCodes.Status500InternalServerError),
-        };
-    }
-
-    [HttpPost("complete/{orderId:long}")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Order completed", typeof(CompleteOrderSuccessResponse))]
-    [SwaggerResponse(StatusCodes.Status409Conflict, "Already completed", typeof(CompleteOrderAlreadyCompletedResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Order not found", typeof(CompleteOrderNotFoundResponse))]
-    public async Task<ActionResult<CompleteOrderResponseBase>> Complete(long orderId)
-    {
-        CompleteOrderResponseBase response = await _orderService.CompleteOrderAsync(orderId);
-        return response switch
-        {
-            CompleteOrderSuccessResponse => Ok(response),
-            CompleteOrderAlreadyCompletedResponse => Conflict(response),
-            CompleteOrderNotFoundResponse => NotFound(response),
             _ => StatusCode(StatusCodes.Status500InternalServerError),
         };
     }
