@@ -1,5 +1,8 @@
+using DataAccess.Repositories.Interfaces;
 using DataAccess.Services.Interfaces;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Presentation.Kafka.Abstractions.Interfaces;
 using Presentation.Protos;
 using System.Globalization;
 using Order = DataAccess.Models.Entities.Orders.Order;
@@ -7,25 +10,60 @@ using OrderHistory = DataAccess.Models.Entities.Orders.OrderHistory;
 using OrderHistoryItemKind = DataAccess.Models.Entities.Orders.OrderHistoryItemKind;
 using OrderHistoryRequestFiltered = DataAccess.Models.Requests.OrderHistoryRequestFiltered;
 using OrderItem = DataAccess.Models.Entities.Orders.OrderItem;
-using OrderState = DataAccess.Models.Enums.OrderState;
+using OrderState = DataAccess.Models.Enums;
 
 namespace Presentation.Services;
 
 public class OrderGrpcService : OrderService.OrderServiceBase
 {
     private readonly IOrderService _orderService;
+    private readonly IOrderRepository _orderRepository;
+    private readonly IOrderHistoryRepository _orderHistoryRepository;
+    private readonly IKafkaProducer<long, Orders.Kafka.Contracts.OrderCreationValue> _kafkaProducer;
 
-    public OrderGrpcService(IOrderService orderService)
+    public OrderGrpcService(
+        IOrderService orderService,
+        IOrderRepository orderRepository,
+        IKafkaProducer<long, Orders.Kafka.Contracts.OrderCreationValue> kafkaProducer,
+        IOrderHistoryRepository orderHistoryRepository)
     {
         _orderService = orderService;
+        _orderRepository = orderRepository;
+        _kafkaProducer = kafkaProducer;
+        _orderHistoryRepository = orderHistoryRepository;
     }
 
     public override async Task<CreateOrderResponse> CreateOrder(CreateOrderRequest request, ServerCallContext context)
     {
-        var order = new Order(0, OrderState.Created, DateTime.UtcNow, request.CreatedBy);
-        bool result = await _orderService.Create(order, context.CancellationToken);
+        var order = new Order(0, OrderState.OrderState.Created, DateTime.UtcNow, request.CreatedBy);
+        long orderId = await _orderRepository.Create(order, context.CancellationToken);
 
-        return result ? new CreateOrderResponse { Success = new CreateOrderSuccess() } : new CreateOrderResponse { Error = new OrderIsNotCreated { Message = "Failed to create order" } };
+        if (orderId == 0)
+        {
+            return new CreateOrderResponse { Error = new OrderIsNotCreated { Message = "Failed to create order" } };
+        }
+
+        var history = new OrderHistory(
+            Id: 0,
+            OrderId: orderId,
+            OrderHistoryItemCreatedAt: DateTime.UtcNow,
+            OrderHistoryItemKind: OrderHistoryItemKind.Created,
+            OrderHistoryItemPayload: null);
+        await _orderHistoryRepository.Create(history, context.CancellationToken);
+
+        await _kafkaProducer.ProduceAsync(
+            orderId,
+            new Orders.Kafka.Contracts.OrderCreationValue
+            {
+                OrderCreated = new()
+                {
+                    OrderId = orderId,
+                    CreatedAt = Timestamp.FromDateTime(DateTime.UtcNow),
+                },
+            },
+            context.CancellationToken);
+
+        return new CreateOrderResponse { Success = new CreateOrderSuccess() };
     }
 
     public override async Task<AddItemResponse> AddItem(AddItemRequest request, ServerCallContext context)
@@ -51,29 +89,51 @@ public class OrderGrpcService : OrderService.OrderServiceBase
 
         return result
             ? new RemoveItemResponse { Success = new RemoveItemSuccess() }
-            : new RemoveItemResponse { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to remove item" } };
+            : new RemoveItemResponse
+                { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to remove item" } };
     }
 
-    public override async Task<TransferToWorkResponse> TransferToWork(TransferToWorkRequest request, ServerCallContext context)
+    public override async Task<TransferToWorkResponse> TransferToWork(
+        TransferToWorkRequest request,
+        ServerCallContext context)
     {
         bool result = await _orderService.TransferToWork(request.OrderId, context.CancellationToken);
 
-        return result
-            ? new TransferToWorkResponse { Success = new TransferToWorkSuccess() }
-            : new TransferToWorkResponse { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to transfer to work" } };
-    }
+        if (result)
+        {
+            await _kafkaProducer.ProduceAsync(
+                request.OrderId,
+                new Orders.Kafka.Contracts.OrderCreationValue
+                {
+                    OrderProcessingStarted = new()
+                    {
+                        OrderId = request.OrderId,
+                        StartedAt = Timestamp.FromDateTime(DateTime.UtcNow),
+                    },
+                },
+                context.CancellationToken);
 
-    public override async Task<CompleteOrderResponse> CompleteOrder(CompleteOrderRequest request, ServerCallContext context)
-    {
-        bool result = await _orderService.CompleteOrder(request.OrderId, context.CancellationToken);
+            return new TransferToWorkResponse { Success = new TransferToWorkSuccess() };
+        }
 
-        return result
-            ? new CompleteOrderResponse { Success = new CompleteOrderSuccess() }
-            : new CompleteOrderResponse { OrderNotFound = new OrderNotFound { Message = "Failed to complete order" } };
+        return new TransferToWorkResponse
+            { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to transfer to work" } };
     }
 
     public override async Task<CancelOrderResponse> Cancel(CancelOrderRequest request, ServerCallContext context)
     {
+        Order order = await _orderRepository.GetById(request.OrderId, context.CancellationToken);
+        if (order.Id == 0)
+            return new CancelOrderResponse { OrderNotFound = new OrderNotFound { Message = "Order not found" } };
+
+        if (order.OrderState != OrderState.OrderState.Created)
+        {
+            return new CancelOrderResponse
+            {
+                AlreadyCompleted = new OrderAlreadyCompleted { Message = "Order is not in 'Created' state" },
+            };
+        }
+
         bool result = await _orderService.Cancel(request.OrderId, context.CancellationToken);
 
         return result
@@ -81,7 +141,9 @@ public class OrderGrpcService : OrderService.OrderServiceBase
             : new CancelOrderResponse { OrderNotFound = new OrderNotFound { Message = "Failed to cancel order" } };
     }
 
-    public override async Task<GetHistoryResponse> GetHistoryByFilter(GetHistoryRequest request, ServerCallContext context)
+    public override async Task<GetHistoryResponse> GetHistoryByFilter(
+        GetHistoryRequest request,
+        ServerCallContext context)
     {
         IAsyncEnumerable<OrderHistory> history = _orderService.GetHistoryByFilter(
             request.Cursor,
