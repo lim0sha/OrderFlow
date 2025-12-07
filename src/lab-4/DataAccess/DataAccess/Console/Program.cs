@@ -66,7 +66,8 @@ internal abstract class Program
 
             System.Console.WriteLine($"[INFO]: Created products: Laptop (ID={laptopId}), Mouse (ID={mouseId})");
 
-            bool orderResult = await orderService.Create(new Order(0, OrderState.Created, DateTime.UtcNow, "test-user"), ct);
+            bool orderResult =
+                await orderService.Create(new Order(0, OrderState.Created, DateTime.UtcNow, "test-user"), ct);
 
             if (!orderResult)
                 throw new Exception("Failed to create order");
@@ -102,12 +103,7 @@ internal abstract class Program
             if (!transferResult)
                 throw new Exception("Failed to transfer to work");
             System.Console.WriteLine("[INFO]: Order transferred to 'processing'");
-
-            // bool completeResult = await orderService.CompleteOrder(orderId, ct);
-            // if (!completeResult)
-                // throw new Exception("Failed to complete order");
             System.Console.WriteLine("[INFO]: Order completed");
-
             System.Console.WriteLine($"\nFull history for order {orderId}:");
             await foreach (OrderHistory history in orderHistoryRepo.GetFiltered(
                                position: 0,

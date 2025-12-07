@@ -89,8 +89,7 @@ public class OrderGrpcService : OrderService.OrderServiceBase
 
         return result
             ? new RemoveItemResponse { Success = new RemoveItemSuccess() }
-            : new RemoveItemResponse
-                { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to remove item" } };
+            : new RemoveItemResponse { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to remove item" } };
     }
 
     public override async Task<TransferToWorkResponse> TransferToWork(
@@ -116,8 +115,7 @@ public class OrderGrpcService : OrderService.OrderServiceBase
             return new TransferToWorkResponse { Success = new TransferToWorkSuccess() };
         }
 
-        return new TransferToWorkResponse
-            { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to transfer to work" } };
+        return new TransferToWorkResponse { OrderIsNotCreated = new OrderIsNotCreated { Message = "Failed to transfer to work" } };
     }
 
     public override async Task<CancelOrderResponse> Cancel(CancelOrderRequest request, ServerCallContext context)
