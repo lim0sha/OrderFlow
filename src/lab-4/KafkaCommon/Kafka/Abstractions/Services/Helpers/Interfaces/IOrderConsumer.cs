@@ -6,6 +6,7 @@ namespace Kafka.Abstractions.Services.Helpers.Interfaces;
 
 public interface IOrderConsumer
 {
-    Task ConsumeAsync(ChannelWriter<ConsumeResult<long, OrderProcessingValue>> writer,
+    Task ConsumeAsync(
+        ChannelWriter<ConsumeResult<long, OrderProcessingValue>> writer,
         CancellationToken token);
 }
