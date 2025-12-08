@@ -1,8 +1,6 @@
 using DataAccess.Repositories.Interfaces;
 using DataAccess.Services.Interfaces;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Presentation.Kafka.Abstractions.Interfaces;
 using Presentation.Protos;
 using System.Globalization;
 using Order = DataAccess.Models.Entities.Orders.Order;
@@ -19,17 +17,14 @@ public class OrderGrpcService : OrderService.OrderServiceBase
     private readonly IOrderService _orderService;
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderHistoryRepository _orderHistoryRepository;
-    private readonly IKafkaProducer<long, Orders.Kafka.Contracts.OrderCreationValue> _kafkaProducer;
 
     public OrderGrpcService(
         IOrderService orderService,
         IOrderRepository orderRepository,
-        IKafkaProducer<long, Orders.Kafka.Contracts.OrderCreationValue> kafkaProducer,
         IOrderHistoryRepository orderHistoryRepository)
     {
         _orderService = orderService;
         _orderRepository = orderRepository;
-        _kafkaProducer = kafkaProducer;
         _orderHistoryRepository = orderHistoryRepository;
     }
 
@@ -50,19 +45,6 @@ public class OrderGrpcService : OrderService.OrderServiceBase
             OrderHistoryItemKind: OrderHistoryItemKind.Created,
             OrderHistoryItemPayload: null);
         await _orderHistoryRepository.Create(history, context.CancellationToken);
-
-        await _kafkaProducer.ProduceAsync(
-            orderId,
-            new Orders.Kafka.Contracts.OrderCreationValue
-            {
-                OrderCreated = new()
-                {
-                    OrderId = orderId,
-                    CreatedAt = Timestamp.FromDateTime(DateTime.UtcNow),
-                },
-            },
-            context.CancellationToken);
-
         return new CreateOrderResponse { Success = new CreateOrderSuccess() };
     }
 
@@ -100,18 +82,6 @@ public class OrderGrpcService : OrderService.OrderServiceBase
 
         if (result)
         {
-            await _kafkaProducer.ProduceAsync(
-                request.OrderId,
-                new Orders.Kafka.Contracts.OrderCreationValue
-                {
-                    OrderProcessingStarted = new()
-                    {
-                        OrderId = request.OrderId,
-                        StartedAt = Timestamp.FromDateTime(DateTime.UtcNow),
-                    },
-                },
-                context.CancellationToken);
-
             return new TransferToWorkResponse { Success = new TransferToWorkSuccess() };
         }
 

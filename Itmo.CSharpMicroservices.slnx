@@ -41,6 +41,9 @@
   <Folder Name="/src/lab-4/Gateway/">
     <Project Path="src\lab-4\Gateway\Gateway\Gateway.csproj" Type="Classic C#" />
   </Folder>
+  <Folder Name="/src/lab-4/KafkaCommon/">
+    <Project Path="src\lab-4\KafkaCommon\Kafka\Kafka.csproj" Type="Classic C#" />
+  </Folder>
   <Folder Name="/src/lab-4/Presentation/">
     <Project Path="src\lab-4\Presentation\Presentation\Presentation.csproj" Type="Classic C#" />
   </Folder>

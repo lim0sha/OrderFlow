@@ -1,5 +1,8 @@
 using Confluent.Kafka;
 using DataAccess.Extensions;
+using Kafka.Abstractions.Extensions;
+using Kafka.Abstractions.Options;
+using Kafka.Serializers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -8,9 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orders.Kafka.Contracts;
 using Presentation.Extensions;
-using Presentation.Kafka.Abstractions.Extensions;
-using Presentation.Kafka.Abstractions.Options;
-using Presentation.Kafka.Serializers;
 using Presentation.Services;
 using Task1.Clients.Extensions;
 using Task2.Extensions;
