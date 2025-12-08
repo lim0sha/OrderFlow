@@ -3,6 +3,7 @@ using DataAccess.Models.Enums;
 using DataAccess.Models.Requests;
 using DataAccess.Repositories.Interfaces;
 using DataAccess.Services.Interfaces;
+using Kafka.Abstractions.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Transactions;
 
@@ -14,17 +15,20 @@ public class OrderService : IOrderService
     private readonly IOrderHistoryRepository _orderHistoryRepository;
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly ILogger<OrderService> _logger;
+    private readonly IOrderPublisher _eventPublisher;
 
     public OrderService(
         IOrderRepository orderRepository,
         IOrderHistoryRepository orderHistoryRepository,
         IOrderItemRepository orderItemRepository,
-        ILogger<OrderService> logger)
+        ILogger<OrderService> logger,
+        IOrderPublisher eventPublisher)
     {
         _orderRepository = orderRepository;
         _orderHistoryRepository = orderHistoryRepository;
         _orderItemRepository = orderItemRepository;
         _logger = logger;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<bool> Create(Order o, CancellationToken ct)
@@ -42,6 +46,8 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
+            await _eventPublisher.PublishOrderCreatedAsync(orderId, ct);
+
             return true;
         }
         catch (Exception ex)
@@ -71,6 +77,7 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
+
             return true;
         }
         catch (Exception ex)
@@ -92,7 +99,6 @@ public class OrderService : IOrderService
                 return false;
 
             OrderItem item = await _orderItemRepository.GetById(oiId, ct);
-
             OrderItem updatedItem = item with { OrderItemDeleted = true };
             await _orderItemRepository.Update(updatedItem, ct);
             var history = new OrderHistory(
@@ -103,6 +109,7 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
+
             return true;
         }
         catch (Exception ex)
@@ -133,6 +140,8 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
+            await _eventPublisher.PublishOrderProcessingStartedAsync(id, ct);
+
             return true;
         }
         catch (Exception ex)
@@ -163,6 +172,7 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
+
             return true;
         }
         catch (Exception ex)
@@ -195,6 +205,7 @@ public class OrderService : IOrderService
                 OrderHistoryItemPayload: null);
             await _orderHistoryRepository.Create(history, ct);
             transaction.Complete();
+
             return true;
         }
         catch (Exception ex)
