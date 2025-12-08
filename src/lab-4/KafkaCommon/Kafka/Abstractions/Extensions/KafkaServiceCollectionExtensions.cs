@@ -1,12 +1,12 @@
 using Confluent.Kafka;
 using Google.Protobuf;
+using Kafka.Abstractions.Interfaces;
+using Kafka.Abstractions.Options;
+using Kafka.Abstractions.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Presentation.Kafka.Abstractions.Interfaces;
-using Presentation.Kafka.Abstractions.Options;
-using Presentation.Kafka.Abstractions.Services;
 
-namespace Presentation.Kafka.Abstractions.Extensions;
+namespace Kafka.Abstractions.Extensions;
 
 public static class KafkaServiceCollectionExtensions
 {

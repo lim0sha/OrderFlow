@@ -1,7 +1,7 @@
 using Confluent.Kafka;
 using Google.Protobuf;
 
-namespace Presentation.Kafka.Serializers;
+namespace Kafka.Serializers;
 
 public class ProtobufSerializer<T> : ISerializer<T>
     where T : IMessage<T>, new()

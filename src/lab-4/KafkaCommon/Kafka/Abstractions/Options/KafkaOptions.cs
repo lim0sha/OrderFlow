@@ -1,4 +1,4 @@
-namespace Presentation.Kafka.Abstractions.Options;
+namespace Kafka.Abstractions.Options;
 
 public class KafkaOptions
 {

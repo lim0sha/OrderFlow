@@ -1,4 +1,4 @@
-namespace Presentation.Kafka.Abstractions.Interfaces;
+namespace Kafka.Abstractions.Interfaces;
 
 public interface IKafkaProducer<TKey, TValue>
 {
